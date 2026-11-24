@@ -157,29 +157,6 @@
                 </form>
 
                 <!-- Accesos rápidos de prueba (1 clic) -->
-                <div class="mt-8 w-full bg-white/75 backdrop-blur-md rounded-2xl p-4 border border-white shadow-soft">
-                    <p class="text-xs font-semibold text-slate-600 uppercase tracking-wider mb-2.5 flex items-center gap-1.5">
-                        <i data-lucide="zap" class="w-3.5 h-3.5 text-blue-600"></i> Acceso rápido de prueba (1 clic)
-                    </p>
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                        <button type="button" onclick="quickFillLogin('monica@aquaclean.com', '123456')"
-                            class="flex items-center gap-2.5 p-2.5 rounded-xl bg-white hover:bg-blue-50 border border-blue-100 text-left transition cursor-pointer group">
-                            <span class="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold text-xs shrink-0">MC</span>
-                            <div class="overflow-hidden">
-                                <p class="text-xs font-bold text-slate-800 truncate group-hover:text-blue-700">Administrador</p>
-                                <p class="text-[11px] text-slate-500 truncate">monica@aquaclean.com</p>
-                            </div>
-                        </button>
-                        <button type="button" onclick="quickFillLogin('eduardo@aquaclean.com', '123456')"
-                            class="flex items-center gap-2.5 p-2.5 rounded-xl bg-white hover:bg-sky-50 border border-sky-100 text-left transition cursor-pointer group">
-                            <span class="w-8 h-8 rounded-full bg-sky-500 text-white flex items-center justify-center font-bold text-xs shrink-0">EL</span>
-                            <div class="overflow-hidden">
-                                <p class="text-xs font-bold text-slate-800 truncate group-hover:text-sky-700">Empleado</p>
-                                <p class="text-[11px] text-slate-500 truncate">eduardo@aquaclean.com</p>
-                            </div>
-                        </button>
-                    </div>
-                </div>
             </div>
 
             <!-- Columna Derecha: Mockups flotantes estilo captura 1 -->
@@ -265,9 +242,9 @@
                         <span>Productos</span>
                     </button>
 
-                    <button data-route="agregar-producto" onclick="navigateTo('agregar-producto')" class="nav-btn w-full flex items-center gap-3.5 px-4 py-3 rounded-full text-sm font-medium text-slate-700 hover:bg-sky-50 transition cursor-pointer">
-                        <i data-lucide="package-plus" class="w-5 h-5 text-slate-600"></i>
-                        <span>Agregar productos</span>
+                    <button data-route="servicios" onclick="navigateTo('servicios')" class="nav-btn w-full flex items-center gap-3.5 px-4 py-3 rounded-full text-sm font-medium text-slate-700 hover:bg-sky-50 transition cursor-pointer">
+                        <i data-lucide="washing-machine" class="w-5 h-5 text-slate-600"></i>
+                        <span>Servicios</span>
                     </button>
 
                     <button data-route="ventas" onclick="navigateTo('ventas')" class="nav-btn w-full flex items-center gap-3.5 px-4 py-3 rounded-full text-sm font-medium text-slate-700 hover:bg-sky-50 transition cursor-pointer">
@@ -313,18 +290,18 @@
                     <div class="relative">
                         <i data-lucide="search" class="w-4 h-4 text-blue-600 absolute left-4 top-1/2 -translate-y-1/2"></i>
                         <input type="text" id="global-search-input" oninput="handleGlobalSearch(this.value)"
-                            placeholder="Buscar productos, ventas, categorías..."
+                            placeholder="Buscar productos, servicios, ventas, categorías..."
                             class="w-full pl-11 pr-4 py-2.5 rounded-full bg-[#E1F3FC] text-sm text-slate-700 placeholder-blue-500/75 focus:outline-none focus:ring-2 focus:ring-blue-500 transition">
                     </div>
                 </div>
 
                 <!-- Perfil Usuario Logueado -->
-            <div class="flex items-center gap-3">
-                <div id="cloud-status-badge" class="hidden sm:flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-semibold bg-sky-50 text-blue-700 border border-sky-200">
-                    <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
-                    <span id="cloud-status-text">Supabase</span>
-                </div>
-                <button onclick="navigateTo('ajustes')" class="flex items-center gap-3 py-1.5 px-2.5 rounded-full hover:bg-sky-50 transition cursor-pointer">
+                <div class="flex items-center gap-3">
+                    <div id="cloud-status-badge" class="hidden sm:flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-semibold bg-sky-50 text-blue-700 border border-sky-200">
+                        <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+                        <span id="cloud-status-text">Supabase</span>
+                    </div>
+                    <button onclick="navigateTo('ajustes')" class="flex items-center gap-3 py-1.5 px-2.5 rounded-full hover:bg-sky-50 transition cursor-pointer">
                         <img id="header-user-avatar" src="" alt="Avatar" class="w-10 h-10 rounded-full object-cover border-2 border-blue-200 bg-sky-100">
                         <div class="text-left hidden md:block">
                             <p id="header-user-name" class="text-sm font-semibold text-slate-800 leading-tight">Usuario</p>
@@ -420,35 +397,6 @@
         </div>
     </div>
 
-    <!-- ==================== MODAL: GESTIÓN DE SERVICIOS DE LAVADO ==================== -->
-    <div id="modal-services" class="fixed inset-0 bg-slate-900/50 backdrop-blur-xs z-50 hidden items-center justify-center p-4">
-        <div class="bg-white rounded-[24px] max-w-xl w-full p-6 sm:p-8 shadow-2xl relative max-h-[90vh] overflow-y-auto">
-            <button onclick="closeModal('modal-services')" class="absolute top-5 right-5 text-slate-400 hover:text-slate-700 p-1 rounded-full hover:bg-slate-100">
-                <i data-lucide="x" class="w-5 h-5"></i>
-            </button>
-            <h2 class="text-xl font-bold text-[#0F2942] mb-1">Catálogo de Servicios de Lavado</h2>
-            <p class="text-xs text-slate-500 mb-5">Administra los tipos de lavado y sus tarifas base.</p>
-
-            <form onsubmit="addNewService(event)" class="grid grid-cols-1 sm:grid-cols-12 gap-3 mb-6 bg-sky-50/70 p-4 rounded-2xl border border-sky-100">
-                <div class="sm:col-span-6">
-                    <label class="block text-xs font-semibold text-slate-600 mb-1">Nombre del servicio</label>
-                    <input type="text" id="new-srv-name" required placeholder="Ej. Lavado en Seco" class="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white text-sm">
-                </div>
-                <div class="sm:col-span-3">
-                    <label class="block text-xs font-semibold text-slate-600 mb-1">Precio ($)</label>
-                    <input type="number" id="new-srv-price" step="0.01" min="0" required placeholder="5.00" class="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white text-sm">
-                </div>
-                <div class="sm:col-span-3 flex items-end">
-                    <button type="submit" class="w-full py-2 px-4 rounded-full btn-cobalt text-white text-xs font-semibold cursor-pointer">
-                        Agregar
-                    </button>
-                </div>
-            </form>
-
-            <div id="services-modal-list" class="space-y-2.5"></div>
-        </div>
-    </div>
-
     <!-- ==================== MODAL: BITÁCORA DE AUDITORÍA (SOLO ADMIN) ==================== -->
     <div id="modal-audit" class="fixed inset-0 bg-slate-900/50 backdrop-blur-xs z-50 hidden items-center justify-center p-4">
         <div class="bg-white rounded-[24px] max-w-3xl w-full p-6 sm:p-8 shadow-2xl relative max-h-[85vh] flex flex-col">
@@ -491,9 +439,9 @@
         // =========================================================================
         // 0. CONFIGURACIÓN DE SUPABASE (PEGA AQUÍ TUS CREDENCIALES DE SUPABASE)
         // =========================================================================
-        const SUPABASE_URL = 'https://xkypcmmexrxeewsenigf.supabase.co';
+       const SUPABASE_URL = 'https://xkypcmmexrxeewsenigf.supabase.co';
         const SUPABASE_ANON_KEY = 'sb_publishable_a3-3O68SYYekFMBg_MpTxw_X3GfilNO';
-        
+
         const isSupabaseConfigured =
             SUPABASE_URL &&
             SUPABASE_ANON_KEY &&
@@ -587,7 +535,6 @@
         const DB_KEY = 'aquaclean_db_v1';
         const SESSION_KEY = 'aquaclean_session_v1';
 
-        // Caché en memoria sincronizada con Supabase (o LocalStorage en modo demo)
         let dbCache = null;
 
         function getInitialDB() {
@@ -722,7 +669,7 @@
                         operacion: 'INIT_DB',
                         usuario_accion: 'SYSTEM',
                         fecha_movimiento: '2026-10-01T08:00:00',
-                        detalle_cambio: 'Inicialización de base de datos Aqua Clean Lavandería en LocalStorage.'
+                        detalle_cambio: 'Inicialización de base de datos Aqua Clean Lavandería.'
                     }
                 ]
             };
@@ -739,7 +686,6 @@
             }
             try {
                 dbCache = JSON.parse(raw);
-                // Asegurar que Monica Castro exista si había una caché anterior en localStorage
                 if (!isSupabaseConfigured && dbCache.usuarios && !dbCache.usuarios.some(u => u.correo.toLowerCase() === 'monica@aquaclean.com')) {
                     dbCache.usuarios.unshift({
                         id_usuario: Date.now(),
@@ -767,7 +713,6 @@
             localStorage.setItem(DB_KEY, JSON.stringify(db));
         }
 
-        // Sincronización completa desde Supabase PostgreSQL hacia dbCache
         async function syncFromSupabase(silent = true) {
             if (!supabaseClient) return loadDB();
 
@@ -835,7 +780,6 @@
             }
         }
 
-        // Suscripción Realtime a cambios en Supabase
         function setupSupabaseRealtime() {
             if (!supabaseClient) return;
             supabaseClient
@@ -849,7 +793,6 @@
                 .subscribe();
         }
 
-        // Equivalente a Triggers de Auditoría en PostgreSQL / Local
         async function registrarBitacora(db, tabla, operacion, detalle) {
             const user = getCurrentUser();
             const usuarioAccion = user ? `${user.nombre} (${user.correo})` : 'SYSTEM';
@@ -877,7 +820,6 @@
             }
         }
 
-        // Equivalente a sp_ObtenerFacturaCalculada
         function sp_ObtenerFacturaCalculada(db, id_venta) {
             const venta = db.ventas.find(v => v.id_ventas === id_venta);
             if (!venta) return null;
@@ -927,18 +869,14 @@
             currentRoute: 'menu',
             searchQuery: '',
             salesChartInstance: null,
-            // Estado del formulario de Ventas (Nueva Venta o Editar Venta)
             saleForm: {
-                editingId: null, // null = Nueva Venta, number = Editar Venta (Solo Admin)
+                editingId: null,
                 cliente: '',
-                servicios: [], // [{ id_servicio, cantidad, peso_lb, precio_unitario_historico }]
-                productos: []  // [{ id_producto, cantidad_ml, precio_unitario_historico }]
+                servicios: [],
+                productos: []
             },
-            // Estado para mostrar/ocultar contraseñas en empleados
             visiblePasswords: {},
-            // Edición inline en perfil
             editingProfileField: null,
-            // Avatar temporal en formulario de nuevo empleado
             newEmpAvatar: createAvatarDataURI('EMP', '#0A58CA', '#60A5FA')
         };
 
@@ -1145,19 +1083,15 @@
             document.getElementById('login-view').classList.add('hidden');
             document.getElementById('app-view').classList.remove('hidden');
 
-            // Actualizar badge de conexión en el header
             const statusText = document.getElementById('cloud-status-text');
             if (statusText) {
                 statusText.textContent = supabaseClient ? 'Supabase Cloud' : 'Modo Local';
             }
 
-            // Actualizar datos en header
             document.getElementById('header-user-name').textContent = user.nombre;
             document.getElementById('header-user-role').textContent = roleObj ? roleObj.nombre_rol : '';
             document.getElementById('header-user-avatar').src = user.foto_perfil || createAvatarDataURI('AC', '#0A58CA', '#38BDF8');
 
-            // Control estricto de menú lateral según rol:
-            // Empleado (id_rol === 2) NO puede ver la opción Empleados
             const navEmpleados = document.getElementById('nav-empleados');
             if (user.id_rol === 1) {
                 navEmpleados.classList.remove('hidden');
@@ -1168,7 +1102,6 @@
                 }
             }
 
-            // Inicializar formulario de venta limpia
             resetSaleForm();
             navigateTo(state.currentRoute);
         }
@@ -1195,14 +1128,13 @@
                 route = 'menu';
             }
 
+            // Actualizar ruta actual en el estado global
             state.currentRoute = route;
-            state.searchQuery = '';
-            const searchInput = document.getElementById('global-search-input');
-            if (searchInput) searchInput.value = '';
 
             // Actualizar botones activos del sidebar
+            const activeSidebarRoute = route === 'agregar-producto' ? 'productos' : route;
             document.querySelectorAll('.nav-btn').forEach(btn => {
-                if (btn.dataset.route === route) {
+                if (btn.dataset.route === activeSidebarRoute) {
                     btn.classList.add('sidebar-item-active');
                 } else {
                     btn.classList.remove('sidebar-item-active');
@@ -1219,6 +1151,7 @@
                 'menu': 'Panel Principal',
                 'productos': 'Inventario de Productos',
                 'agregar-producto': 'Agregar Nuevo Producto',
+                'servicios': 'Catálogo de Servicios de Lavado',
                 'ventas': 'Gestión de Ventas y Servicios',
                 'categorias': 'Categorías de Insumos',
                 'empleados': 'Gestión de Empleados',
@@ -1241,6 +1174,9 @@
                 case 'agregar-producto':
                     renderAgregarProductoView(container);
                     break;
+                case 'servicios':
+                    renderServiciosView(container);
+                    break;
                 case 'ventas':
                     renderVentasView(container);
                     break;
@@ -1260,7 +1196,7 @@
         }
 
         // =========================================================================
-        // 7. VISTA 1: DASHBOARD / MENU (CAPTURA 2)
+        // 7. VISTA 1: DASHBOARD / MENU
         // =========================================================================
         function renderDashboardView(container) {
             const db = loadDB();
@@ -1271,16 +1207,13 @@
             const totalSalesCount = db.ventas.length;
             const totalCategoriesCount = db.categorias.length;
 
-            // Productos más convenientes (ordenados por menor precio o destacados)
             const topProducts = [...activeProducts].sort((a, b) => a.precio - b.precio).slice(0, 3);
 
-            // Categorías con conteo real de productos activos
             const categoriesSummary = db.categorias.map(cat => ({
                 ...cat,
                 count: activeProducts.filter(p => p.id_categoria === cat.id_categoria).length
             }));
 
-            // Regla de Rol: Si es Empleado, ocultamos tarjeta "Total de Empleados"
             const kpiGridCols = admin ? 'grid-cols-1 sm:grid-cols-2 xl:grid-cols-4' : 'grid-cols-1 sm:grid-cols-3';
 
             container.innerHTML = `
@@ -1410,7 +1343,6 @@
                 state.salesChartInstance.destroy();
             }
 
-            // Calcular total real de ventas actuales para enriquecer el mes vigente
             let currentSalesTotal = 0;
             db.ventas.forEach(v => {
                 const f = sp_ObtenerFacturaCalculada(db, v.id_ventas);
@@ -1481,7 +1413,7 @@
         }
 
         // =========================================================================
-        // 8. VISTA 2: PRODUCTOS + MODAL EDITAR PRODUCTO (CAPTURAS 3 Y 4)
+        // 8. VISTA 2: PRODUCTOS + MODAL EDITAR PRODUCTO
         // =========================================================================
         function renderProductosView(container) {
             const db = loadDB();
@@ -1622,7 +1554,6 @@
                 }
             }
 
-            // Trigger equivalente: trg_Auditoria_CambioPrecioProducto
             if (oldPrice !== precio) {
                 await registrarBitacora(
                     db,
@@ -1676,7 +1607,7 @@
                             }
                         }
 
-                        target.estado = false; // Soft delete
+                        target.estado = false;
                         await registrarBitacora(freshDb, 'productos', 'SOFT_DELETE', `Se desactivó el producto ID: ${target.id_producto} (${target.nombre})`);
 
                         if (supabaseClient) {
@@ -1811,7 +1742,7 @@
         }
 
         // =========================================================================
-        // 10. VISTA 4: VENTAS Y SERVICIOS (CAPTURA 5 + REGLAS DE ROL ESTRICTAS)
+        // 10. VISTA 4: VENTAS Y SERVICIOS
         // =========================================================================
         function resetSaleForm() {
             const db = loadDB();
@@ -1834,7 +1765,6 @@
             const admin = isAdmin();
             const q = state.searchQuery;
 
-            // Si un Empleado tiene editingId por alguna razón, forzar reset a Nueva Venta
             if (!admin && state.saleForm.editingId !== null) {
                 resetSaleForm();
             }
@@ -1853,7 +1783,6 @@
                            String(f.id_ventas).includes(q);
                 });
 
-            // Calcular totales en tiempo real del formulario lateral derecho
             const subtotalServiciosForm = state.saleForm.servicios.reduce(
                 (acc, item) => acc + (Number(item.cantidad || 0) * Number(item.precio_unitario_historico || 0)), 0
             );
@@ -1874,7 +1803,7 @@
                                 <h1 class="text-xl font-bold text-[#0F2942]">Historial de Ventas</h1>
                                 <p class="text-xs text-slate-600">Facturación detallada por servicios de lavado y consumo de insumos.</p>
                             </div>
-                            <button onclick="openServicesCatalogModal()" class="px-4 py-2 rounded-full bg-white text-[#0A58CA] border border-blue-200 hover:bg-blue-50 text-xs font-semibold flex items-center gap-1.5 shadow-2xs cursor-pointer">
+                            <button onclick="navigateTo('servicios')" class="px-4 py-2 rounded-full bg-white text-[#0A58CA] border border-blue-200 hover:bg-blue-50 text-xs font-semibold flex items-center gap-1.5 shadow-2xs cursor-pointer">
                                 <i data-lucide="washing-machine" class="w-4 h-4"></i> Servicios de Lavado
                             </button>
                         </div>
@@ -1920,7 +1849,7 @@
                                         `).join('')}
                                     </div>
 
-                                    <!-- Botones de Acción: Editar SOLO VISIBLE PARA ADMINISTRADOR -->
+                                    <!-- Botones de Acción: Editar y Eliminar SOLO VISIBLES PARA ADMINISTRADOR -->
                                     <div class="flex sm:flex-col gap-2 shrink-0">
                                         <button onclick="viewInvoiceModal(${venta.id_ventas})" class="px-5 py-2 rounded-full bg-sky-100 hover:bg-sky-200 text-[#0A58CA] text-xs font-semibold transition cursor-pointer">
                                             Ver Factura
@@ -1928,6 +1857,9 @@
                                         ${admin ? `
                                             <button onclick="startEditSale(${venta.id_ventas})" class="px-6 py-2 rounded-full btn-cobalt text-white text-xs font-semibold transition cursor-pointer">
                                                 Editar
+                                            </button>
+                                            <button onclick="deleteSale(${venta.id_ventas})" class="px-6 py-2 rounded-full bg-rose-50 hover:bg-rose-100 text-rose-600 text-xs font-semibold transition cursor-pointer">
+                                                Eliminar
                                             </button>
                                         ` : ''}
                                     </div>
@@ -2166,7 +2098,6 @@
             renderCurrentRoute();
         }
 
-        // Cargar venta en el formulario derecho (EXCLUSIVO ADMINISTRADOR)
         function startEditSale(id_venta) {
             if (!isAdmin()) {
                 showToast('Solo el Administrador puede editar ventas.', 'error');
@@ -2208,7 +2139,80 @@
             renderCurrentRoute();
         }
 
-        // Guardar Nueva Venta o Actualizar Venta (equivalente a sp_RegistrarVentaCompleta + sp_AgregarProductoAVenta)
+        function deleteSale(id_venta) {
+            if (!isAdmin()) {
+                showToast('Solo el Administrador puede eliminar ventas.', 'error');
+                return;
+            }
+            const db = loadDB();
+            const venta = db.ventas.find(v => v.id_ventas === id_venta);
+            if (!venta) return;
+
+            openConfirmModal(
+                `Eliminar Venta #${id_venta}`,
+                `¿Estás seguro de eliminar la venta de "${venta.cliente}"? Se restaurará el stock de los productos consumidos.`,
+                async () => {
+                    const freshDb = loadDB();
+                    const oldProds = freshDb.detalle_venta_product.filter(d => d.id_venta === id_venta);
+
+                    if (supabaseClient) {
+                        try {
+                            for (const op of oldProds) {
+                                const prodObj = freshDb.productos.find(p => p.id_producto === op.id_producto);
+                                if (prodObj) {
+                                    const newStock = Number(prodObj.stock) + Number(op.cantidad_ml);
+                                    const { error: stkErr } = await supabaseClient
+                                        .from('productos')
+                                        .update({ stock: newStock })
+                                        .eq('id_producto', op.id_producto);
+                                    if (stkErr) throw stkErr;
+                                }
+                            }
+
+                            await supabaseClient.from('detalle_venta_servicio').delete().eq('id_venta', id_venta);
+                            await supabaseClient.from('detalle_venta_product').delete().eq('id_venta', id_venta);
+                            const { error: delErr } = await supabaseClient.from('ventas').delete().eq('id_ventas', id_venta);
+                            if (delErr) throw delErr;
+
+                            await registrarBitacora(
+                                freshDb,
+                                'ventas',
+                                'DELETE_VENTA',
+                                `Se eliminó la venta #${id_venta} del cliente "${venta.cliente}" y se restauró el stock de insumos.`
+                            );
+                            await syncFromSupabase(true);
+                        } catch (err) {
+                            console.error(err);
+                            showToast('Error al eliminar venta en Supabase: ' + (err.message || err), 'error');
+                            return;
+                        }
+                    } else {
+                        for (const op of oldProds) {
+                            const prodRef = freshDb.productos.find(p => p.id_producto === op.id_producto);
+                            if (prodRef) prodRef.stock += Number(op.cantidad_ml);
+                        }
+                        freshDb.detalle_venta_servicio = freshDb.detalle_venta_servicio.filter(d => d.id_venta !== id_venta);
+                        freshDb.detalle_venta_product = freshDb.detalle_venta_product.filter(d => d.id_venta !== id_venta);
+                        freshDb.ventas = freshDb.ventas.filter(v => v.id_ventas !== id_venta);
+
+                        await registrarBitacora(
+                            freshDb,
+                            'ventas',
+                            'DELETE_VENTA',
+                            `Se eliminó la venta #${id_venta} del cliente "${venta.cliente}" y se restauró el stock de insumos.`
+                        );
+                        saveDB(freshDb);
+                    }
+
+                    if (state.saleForm.editingId === id_venta) {
+                        resetSaleForm();
+                    }
+                    showToast(`Venta #${id_venta} eliminada correctamente.`, 'info');
+                    renderCurrentRoute();
+                }
+            );
+        }
+
         async function submitSaleForm(e) {
             e.preventDefault();
             const user = getCurrentUser();
@@ -2227,7 +2231,6 @@
             const db = loadDB();
             const editingId = isAdmin() ? state.saleForm.editingId : null;
 
-            // Agrupar productos por id_producto (PK Compuesta id_venta, id_producto)
             const groupedProducts = {};
             for (const item of state.saleForm.productos) {
                 const pid = Number(item.id_producto);
@@ -2241,7 +2244,6 @@
                 groupedProducts[pid].cantidad_ml += Number(item.cantidad_ml);
             }
 
-            // Mapa de stock previo restaurado si estamos editando
             const restoredStockMap = {};
             db.productos.forEach(p => { restoredStockMap[p.id_producto] = Number(p.stock); });
 
@@ -2254,7 +2256,6 @@
                 }
             }
 
-            // Validar stock suficiente antes de confirmar (chk_stock_producto)
             for (const pidStr in groupedProducts) {
                 const reqProd = groupedProducts[pidStr];
                 const dbProd = db.productos.find(p => p.id_producto === reqProd.id_producto && p.estado === true);
@@ -2269,7 +2270,6 @@
                 }
             }
 
-            // Agrupar servicios por id_servicio (PK Compuesta id_venta, id_servicio)
             const groupedServices = {};
             for (const item of state.saleForm.servicios) {
                 const sid = Number(item.id_servicio);
@@ -2290,7 +2290,6 @@
             if (supabaseClient) {
                 try {
                     if (editingId !== null) {
-                        // 1. Actualizar encabezado en Supabase
                         const { error: upErr } = await supabaseClient
                             .from('ventas')
                             .update({ cliente })
@@ -2298,11 +2297,9 @@
                         if (upErr) throw upErr;
                         targetVentaId = editingId;
 
-                        // 2. Eliminar detalles anteriores
                         await supabaseClient.from('detalle_venta_servicio').delete().eq('id_venta', editingId);
                         await supabaseClient.from('detalle_venta_product').delete().eq('id_venta', editingId);
 
-                        // 3. Restaurar stock previo en tabla productos antes de descontar nuevo consumo
                         const oldProds = db.detalle_venta_product.filter(d => d.id_venta === editingId);
                         for (const op of oldProds) {
                             await supabaseClient
@@ -2311,7 +2308,6 @@
                                 .eq('id_producto', op.id_producto);
                         }
                     } else {
-                        // 1. Insertar encabezado en Supabase
                         const { data: insertedVenta, error: insErr } = await supabaseClient
                             .from('ventas')
                             .insert([{ cliente, id_usuario: user.id_usuario }])
@@ -2321,7 +2317,6 @@
                         targetVentaId = insertedVenta.id_ventas;
                     }
 
-                    // 2. Insertar detalles de servicios
                     const serviceRows = Object.values(groupedServices).map(s => ({
                         id_venta: targetVentaId,
                         id_servicio: s.id_servicio,
@@ -2335,7 +2330,6 @@
                         if (srvErr) throw srvErr;
                     }
 
-                    // 3. Insertar detalles de productos y descontar stock
                     const productRows = Object.values(groupedProducts).map(p => ({
                         id_venta: targetVentaId,
                         id_producto: p.id_producto,
@@ -2371,7 +2365,6 @@
                     return;
                 }
             } else {
-                // MODO LOCAL FALLBACK
                 if (editingId !== null) {
                     const vIdx = db.ventas.findIndex(v => v.id_ventas === editingId);
                     if (vIdx === -1) return;
@@ -2518,27 +2511,105 @@
             openModal('modal-invoice');
         }
 
-        function openServicesCatalogModal() {
+        // =========================================================================
+        // 10B. VISTA: SERVICIOS DE LAVADO
+        // =========================================================================
+        function renderServiciosView(container) {
             const db = loadDB();
-            const list = document.getElementById('services-modal-list');
-            list.innerHTML = db.servicios_lavados.map(srv => `
-                <div class="flex items-center justify-between p-3.5 rounded-2xl border border-slate-100 bg-slate-50/70">
-                    <div>
-                        <p class="text-sm font-bold text-slate-800">${srv.nombre_servicio}</p>
-                        <p class="text-xs text-slate-500">Tarifa base: <strong class="text-blue-600">${formatMoney(srv.precio_lavado)}</strong></p>
+            const q = state.searchQuery;
+
+            const services = db.servicios_lavados.filter(s =>
+                !q || s.nombre_servicio.toLowerCase().includes(q)
+            );
+
+            container.innerHTML = `
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+                    <!-- Lista de Servicios -->
+                    <div class="lg:col-span-7 space-y-4">
+                        <div>
+                            <h1 class="text-xl font-bold text-[#0F2942]">Servicios de Lavado</h1>
+                            <p class="text-xs text-slate-600">Catálogo de tipos de lavado, cargas y tarifas disponibles en mostrador.</p>
+                        </div>
+
+                        ${services.length === 0 ? `
+                            <div class="bg-white rounded-card p-10 text-center shadow-soft">
+                                <p class="text-sm font-semibold text-slate-600">No se encontraron servicios registrados.</p>
+                            </div>
+                        ` : `
+                            <div class="space-y-3">
+                                ${services.map(srv => `
+                                    <div class="bg-white rounded-card p-5 shadow-soft flex flex-wrap items-center justify-between gap-4 hover:shadow-md transition">
+                                        <div class="flex items-center gap-4">
+                                            <div class="w-12 h-12 rounded-2xl bg-sky-50 text-[#0A58CA] flex items-center justify-center shrink-0">
+                                                <i data-lucide="washing-machine" class="w-6 h-6"></i>
+                                            </div>
+                                            <div>
+                                                <div class="flex items-center gap-2">
+                                                    <h3 class="text-base font-bold text-slate-800">${srv.nombre_servicio}</h3>
+                                                    <span class="px-2.5 py-0.5 rounded-full text-[10px] font-semibold ${srv.estado ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-200 text-slate-600'}">
+                                                        ${srv.estado ? 'Activo' : 'Inactivo'}
+                                                    </span>
+                                                </div>
+                                                <p class="text-xs text-slate-500 mt-0.5">Precio del servicio: <strong class="text-[#0A58CA] text-sm">${formatMoney(srv.precio_lavado)}</strong></p>
+                                            </div>
+                                        </div>
+
+                                        <div class="flex items-center gap-2">
+                                            <button onclick="promptEditService(${srv.id_servicio})" class="px-4 py-2 rounded-full bg-sky-100 hover:bg-sky-200 text-[#0A58CA] text-xs font-semibold cursor-pointer">
+                                                Editar
+                                            </button>
+                                            <button onclick="toggleServiceStatus(${srv.id_servicio})" class="px-4 py-2 rounded-full ${srv.estado ? 'bg-rose-50 hover:bg-rose-100 text-rose-600' : 'bg-emerald-50 hover:bg-emerald-100 text-emerald-700'} text-xs font-semibold cursor-pointer">
+                                                ${srv.estado ? 'Desactivar' : 'Activar'}
+                                            </button>
+                                        </div>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        `}
                     </div>
-                    <span class="px-3 py-1 rounded-full text-[11px] font-semibold ${srv.estado ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-200 text-slate-600'}">
-                        ${srv.estado ? 'Activo' : 'Inactivo'}
-                    </span>
+
+                    <!-- Formulario Nuevo Servicio -->
+                    <div class="lg:col-span-5 bg-white rounded-card p-6 shadow-soft sticky top-24">
+                        <div class="flex items-center gap-3 mb-4">
+                            <div class="w-10 h-10 rounded-2xl bg-blue-50 text-[#0A58CA] flex items-center justify-center">
+                                <i data-lucide="plus-circle" class="w-5 h-5"></i>
+                            </div>
+                            <div>
+                                <h2 class="text-lg font-bold text-[#0F2942]">Agregar Servicio</h2>
+                                <p class="text-xs text-slate-500">Define el nombre del lavado y su tarifa base.</p>
+                            </div>
+                        </div>
+
+                        <form onsubmit="createServiceFromPage(event)" class="space-y-4">
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-700 mb-1">Nombre del servicio *</label>
+                                <input type="text" id="page-srv-name" required placeholder="Ej. Lavado Express Carga 20 lb"
+                                    class="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-sm focus:outline-none focus:border-blue-600">
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-700 mb-1">Precio del servicio ($) *</label>
+                                <input type="number" id="page-srv-price" step="0.01" min="0" required placeholder="6.50"
+                                    class="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-sm focus:outline-none focus:border-blue-600">
+                            </div>
+
+                            <div class="pt-2">
+                                <button type="submit" class="w-full py-3 px-6 rounded-full btn-cobalt text-white text-sm font-semibold shadow-pill cursor-pointer">
+                                    Guardar Servicio
+                                </button>
+                            </div>
+                        </form>
+                    </div>
                 </div>
-            `).join('');
-            openModal('modal-services');
+            `;
         }
 
-        async function addNewService(e) {
+        async function createServiceFromPage(e) {
             e.preventDefault();
-            const name = document.getElementById('new-srv-name').value.trim();
-            const price = Number(document.getElementById('new-srv-price').value);
+            const nameInput = document.getElementById('page-srv-name');
+            const priceInput = document.getElementById('page-srv-price');
+            const name = nameInput.value.trim();
+            const price = Number(priceInput.value);
             if (!name) return;
 
             const db = loadDB();
@@ -2564,10 +2635,86 @@
                 saveDB(db);
             }
 
-            document.getElementById('new-srv-name').value = '';
-            document.getElementById('new-srv-price').value = '';
-            showToast('Servicio agregado al catálogo.', 'success');
-            openServicesCatalogModal();
+            nameInput.value = '';
+            priceInput.value = '';
+            showToast(`Servicio "${name}" agregado correctamente.`, 'success');
+            renderCurrentRoute();
+        }
+
+        function promptEditService(id_servicio) {
+            const db = loadDB();
+            const srv = db.servicios_lavados.find(s => s.id_servicio === id_servicio);
+            if (!srv) return;
+
+            document.getElementById('confirm-title').textContent = 'Editar Servicio';
+            document.getElementById('confirm-message').innerHTML = `
+                <div class="space-y-3 text-left mt-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">Nombre del servicio</label>
+                        <input type="text" id="inline-edit-srv-name" value="${srv.nombre_servicio}"
+                            class="w-full px-3.5 py-2 rounded-xl border border-slate-300 text-sm text-slate-800 focus:outline-none focus:border-blue-600">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">Precio ($)</label>
+                        <input type="number" step="0.01" min="0" id="inline-edit-srv-price" value="${srv.precio_lavado}"
+                            class="w-full px-3.5 py-2 rounded-xl border border-slate-300 text-sm text-slate-800 focus:outline-none focus:border-blue-600">
+                    </div>
+                </div>
+            `;
+            const btn = document.getElementById('confirm-accept-btn');
+            btn.onclick = async () => {
+                const newName = document.getElementById('inline-edit-srv-name').value.trim();
+                const newPrice = Number(document.getElementById('inline-edit-srv-price').value);
+                if (!newName || isNaN(newPrice) || newPrice < 0) return;
+
+                if (supabaseClient) {
+                    const { error } = await supabaseClient
+                        .from('servicios_lavados')
+                        .update({ nombre_servicio: newName, precio_lavado: newPrice })
+                        .eq('id_servicio', id_servicio);
+                    if (error) {
+                        showToast('Error al actualizar servicio: ' + error.message, 'error');
+                        return;
+                    }
+                    await syncFromSupabase(true);
+                } else {
+                    const freshDb = loadDB();
+                    const target = freshDb.servicios_lavados.find(s => s.id_servicio === id_servicio);
+                    if (target) {
+                        target.nombre_servicio = newName;
+                        target.precio_lavado = newPrice;
+                        saveDB(freshDb);
+                    }
+                }
+                showToast('Servicio actualizado correctamente.', 'success');
+                closeModal('modal-confirm');
+                renderCurrentRoute();
+            };
+            openModal('modal-confirm');
+        }
+
+        async function toggleServiceStatus(id_servicio) {
+            const db = loadDB();
+            const srv = db.servicios_lavados.find(s => s.id_servicio === id_servicio);
+            if (!srv) return;
+            const nextState = !srv.estado;
+
+            if (supabaseClient) {
+                const { error } = await supabaseClient
+                    .from('servicios_lavados')
+                    .update({ estado: nextState })
+                    .eq('id_servicio', id_servicio);
+                if (error) {
+                    showToast('Error al cambiar estado del servicio: ' + error.message, 'error');
+                    return;
+                }
+                await syncFromSupabase(true);
+            } else {
+                srv.estado = nextState;
+                saveDB(db);
+            }
+
+            showToast(nextState ? 'Servicio activado.' : 'Servicio desactivado.', 'info');
             renderCurrentRoute();
         }
 
@@ -2673,7 +2820,6 @@
             const cat = db.categorias.find(c => c.id_categoria === id_categoria);
             if (!cat) return;
 
-            // Modal inline rápido dentro de confirm-modal
             const msgEl = document.getElementById('confirm-message');
             document.getElementById('confirm-title').textContent = 'Editar Categoría';
             msgEl.innerHTML = `
@@ -2713,7 +2859,6 @@
 
         function deleteCategory(id_categoria) {
             const db = loadDB();
-            // Integridad referencial: fk_productos_categorias ON DELETE RESTRICT
             const hasProducts = db.productos.some(p => p.id_categoria === id_categoria && p.estado === true);
             if (hasProducts) {
                 showToast('No se puede eliminar: tiene productos activos asociados.', 'error');
@@ -2746,7 +2891,7 @@
         }
 
         // =========================================================================
-        // 12. VISTA 6: EMPLEADOS (CAPTURA 7 - SOLO ADMINISTRADOR)
+        // 12. VISTA 6: EMPLEADOS (SOLO ADMINISTRADOR)
         // =========================================================================
         function renderEmpleadosView(container) {
             if (!isAdmin()) {
@@ -3011,7 +3156,7 @@
                             }
                         }
 
-                        target.estado = false; // Trigger trg_Auditoria_SoftDelete_Usuarios
+                        target.estado = false;
                         await registrarBitacora(
                             freshDb,
                             'usuarios',
@@ -3032,7 +3177,7 @@
         }
 
         // =========================================================================
-        // 13. VISTA 7: PERFIL / AJUSTES (CAPTURA 6)
+        // 13. VISTA 7: PERFIL / AJUSTES
         // =========================================================================
         function renderAjustesView(container) {
             const user = getCurrentUser();
@@ -3234,6 +3379,7 @@
                     'UPDATE_PRECIO': 'bg-amber-100 text-amber-800',
                     'INSERT_VENTA': 'bg-emerald-100 text-emerald-700',
                     'UPDATE_VENTA': 'bg-blue-100 text-blue-700',
+                    'DELETE_VENTA': 'bg-rose-100 text-rose-700',
                     'INIT_DB': 'bg-slate-100 text-slate-700'
                 };
                 return `
@@ -3259,18 +3405,15 @@
         // 14. INICIALIZACIÓN AL CARGAR LA PÁGINA
         // =========================================================================
         window.addEventListener('DOMContentLoaded', async () => {
-            // Mostrar banner si Supabase aún tiene las llaves de ejemplo
             const banner = document.getElementById('supabase-mode-banner');
             if (!isSupabaseConfigured && banner) {
                 banner.classList.remove('hidden');
             }
 
-            // Renderizar logos SVG inline
             document.getElementById('login-logo-container').innerHTML = getLogoSVG('white');
             document.getElementById('mockup-logo-container').innerHTML = getLogoSVG('color');
             document.getElementById('sidebar-logo-container').innerHTML = getLogoSVG('color');
 
-            // Inicializar BD local o sincronizar desde Supabase
             if (supabaseClient) {
                 await syncFromSupabase(true);
                 setupSupabaseRealtime();
@@ -3278,7 +3421,6 @@
                 loadDB();
             }
 
-            // Verificar sesión activa
             if (getCurrentUser()) {
                 await initAppShell();
             } else {
