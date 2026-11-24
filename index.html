@@ -1,0 +1,3293 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AQUA CLEAN LAVANDERÍA - Sistema de Gestión</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Supabase JS v2 SDK Oficial -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        aqua: {
+                            bg: '#DDF0F9',
+                            light: '#EAF6FC',
+                            primary: '#0A58CA',
+                            dark: '#0D47A1',
+                            accent: '#38BDF8',
+                            navy: '#102A43'
+                        }
+                    },
+                    borderRadius: {
+                        'card': '20px',
+                    },
+                    boxShadow: {
+                        'soft': '0 4px 20px -2px rgba(13, 71, 161, 0.06)',
+                        'pill': '0 4px 12px rgba(10, 88, 202, 0.22)',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #DDF0F9;
+            color: #1E293B;
+        }
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #EAF6FC;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #93C5FD;
+            border-radius: 9999px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #0A58CA;
+        }
+        .login-gradient {
+            background: linear-gradient(135deg, #2B82D9 0%, #6EB5EB 38%, #DDF0F9 78%, #F0F9FF 100%);
+        }
+        .btn-cobalt {
+            background: linear-gradient(180deg, #0D6EFD 0%, #0A58CA 100%);
+            transition: all 0.2s ease;
+        }
+        .btn-cobalt:hover {
+            background: linear-gradient(180deg, #0A58CA 0%, #084298 100%);
+            transform: translateY(-1px);
+            box-shadow: 0 6px 14px rgba(10, 88, 202, 0.28);
+        }
+        .sidebar-item-active {
+            background: linear-gradient(90deg, #0D6EFD 0%, #0A58CA 100%);
+            color: #FFFFFF !important;
+            box-shadow: 0 4px 12px rgba(10, 88, 202, 0.25);
+        }
+        .sidebar-item-active i, .sidebar-item-active svg {
+            color: #FFFFFF !important;
+        }
+        @media print {
+            body * { visibility: hidden; }
+            #invoice-printable, #invoice-printable * { visibility: visible; }
+            #invoice-printable {
+                position: fixed;
+                left: 0;
+                top: 0;
+                width: 100%;
+                background: white;
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body class="antialiased selection:bg-blue-200 selection:text-blue-900">
+
+    <!-- ==================== NOTIFICACIONES TOAST ==================== -->
+    <div id="toast-container" class="fixed top-5 right-5 z-50 flex flex-col gap-3 max-w-sm w-full pointer-events-none"></div>
+
+    <!-- ==================== BANNER DE ESTADO SUPABASE ==================== -->
+    <div id="supabase-mode-banner" class="hidden bg-amber-50 border-b border-amber-200 text-amber-900 px-4 py-2 text-xs font-medium flex items-center justify-center gap-2 z-50">
+        <i data-lucide="database" class="w-4 h-4 text-amber-600 shrink-0"></i>
+        <span>Modo Demo Local (Pega tu <strong>SUPABASE_URL</strong> y <strong>SUPABASE_ANON_KEY</strong> en el código para conectar a la nube)</span>
+    </div>
+
+    <!-- ==================== VISTA 0: LOGIN ==================== -->
+    <div id="login-view" class="min-h-screen w-full login-gradient flex items-center justify-center p-4 md:p-8 relative overflow-hidden">
+        <!-- Elementos decorativos de burbujas sutiles -->
+        <div class="absolute -top-20 -left-20 w-80 h-80 rounded-full bg-white/15 blur-2xl pointer-events-none"></div>
+        <div class="absolute bottom-10 left-1/3 w-64 h-64 rounded-full bg-sky-300/20 blur-2xl pointer-events-none"></div>
+
+        <div class="max-w-6xl w-full grid grid-cols-1 lg:grid-cols-12 gap-8 items-center z-10">
+            <!-- Columna Izquierda: Formulario de Inicio de Sesión -->
+            <div class="lg:col-span-5 flex flex-col items-start px-2 sm:px-6">
+                <!-- Logo Aqua Clean Blanco -->
+                <div class="mb-8 flex flex-col items-center">
+                    <div id="login-logo-container"></div>
+                </div>
+
+                <h1 class="text-2xl sm:text-3xl font-bold text-[#0F2942] mb-6 w-full text-center sm:text-left pl-1">
+                    Iniciar sesión
+                </h1>
+
+                <form id="login-form" class="w-full space-y-5">
+                    <div>
+                        <label for="login-user" class="block text-sm font-semibold text-slate-700 mb-1.5 pl-1">Usuario</label>
+                        <input type="text" id="login-user" required autocomplete="username"
+                            placeholder="Correo o nombre de usuario"
+                            class="w-full px-5 py-3.5 rounded-2xl bg-white text-slate-800 placeholder-slate-400 shadow-sm border border-white/60 focus:outline-none focus:ring-2 focus:ring-blue-600 transition">
+                    </div>
+
+                    <div>
+                        <label for="login-pass" class="block text-sm font-semibold text-slate-700 mb-1.5 pl-1">Contraseña</label>
+                        <div class="relative">
+                            <input type="password" id="login-pass" required autocomplete="current-password"
+                                placeholder="••••••••"
+                                class="w-full px-5 py-3.5 rounded-2xl bg-white text-slate-800 placeholder-slate-400 shadow-sm border border-white/60 focus:outline-none focus:ring-2 focus:ring-blue-600 transition pr-12">
+                            <button type="button" onclick="toggleLoginPassword()" class="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-blue-600">
+                                <i data-lucide="eye" id="login-eye-icon" class="w-5 h-5"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- SIN enlace de recuperación de contraseña según instrucción -->
+
+                    <div class="pt-3 flex justify-center sm:justify-start">
+                        <button type="submit" class="w-full sm:w-72 py-3.5 px-8 rounded-full btn-cobalt text-white font-semibold text-base shadow-pill cursor-pointer">
+                            Ingresar
+                        </button>
+                    </div>
+                </form>
+
+                <!-- Accesos rápidos de prueba (1 clic) -->
+                <div class="mt-8 w-full bg-white/75 backdrop-blur-md rounded-2xl p-4 border border-white shadow-soft">
+                    <p class="text-xs font-semibold text-slate-600 uppercase tracking-wider mb-2.5 flex items-center gap-1.5">
+                        <i data-lucide="zap" class="w-3.5 h-3.5 text-blue-600"></i> Acceso rápido de prueba (1 clic)
+                    </p>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                        <button type="button" onclick="quickFillLogin('monica@aquaclean.com', '123456')"
+                            class="flex items-center gap-2.5 p-2.5 rounded-xl bg-white hover:bg-blue-50 border border-blue-100 text-left transition cursor-pointer group">
+                            <span class="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold text-xs shrink-0">MC</span>
+                            <div class="overflow-hidden">
+                                <p class="text-xs font-bold text-slate-800 truncate group-hover:text-blue-700">Administrador</p>
+                                <p class="text-[11px] text-slate-500 truncate">monica@aquaclean.com</p>
+                            </div>
+                        </button>
+                        <button type="button" onclick="quickFillLogin('eduardo@aquaclean.com', '123456')"
+                            class="flex items-center gap-2.5 p-2.5 rounded-xl bg-white hover:bg-sky-50 border border-sky-100 text-left transition cursor-pointer group">
+                            <span class="w-8 h-8 rounded-full bg-sky-500 text-white flex items-center justify-center font-bold text-xs shrink-0">EL</span>
+                            <div class="overflow-hidden">
+                                <p class="text-xs font-bold text-slate-800 truncate group-hover:text-sky-700">Empleado</p>
+                                <p class="text-[11px] text-slate-500 truncate">eduardo@aquaclean.com</p>
+                            </div>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Columna Derecha: Mockups flotantes estilo captura 1 -->
+            <div class="hidden lg:flex lg:col-span-7 justify-center items-center relative h-[540px]">
+                <!-- Mockup Superior Derecho -->
+                <div class="absolute -top-4 right-10 w-56 bg-white rounded-[28px] p-4 shadow-xl border-4 border-slate-800 transform -rotate-12 opacity-95">
+                    <div class="bg-sky-50 rounded-2xl p-3 mb-3 flex flex-col items-center">
+                        <div class="w-16 h-16 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 mb-2">
+                            <i data-lucide="sparkles" class="w-8 h-8"></i>
+                        </div>
+                        <span class="text-xs font-bold text-slate-700">Jabones & Detergentes</span>
+                        <span class="text-[10px] text-slate-400">Stock en tiempo real</span>
+                    </div>
+                    <div class="bg-blue-600 text-white rounded-xl p-3 text-center">
+                        <p class="text-xs font-semibold">Lavado Carga 15 lb</p>
+                        <p class="text-sm font-bold mt-0.5">$4.50</p>
+                    </div>
+                </div>
+
+                <!-- Mockup Inferior Izquierdo -->
+                <div class="absolute bottom-2 left-8 w-60 bg-gradient-to-b from-sky-200 to-blue-100 rounded-[32px] p-5 shadow-xl border-4 border-slate-800 transform -rotate-12">
+                    <p class="text-base font-extrabold text-[#0F2942] leading-tight tracking-wide mt-4">
+                        BIENVENIDO A<br>AQUA CLEAN<br>LAVANDERÍA!
+                    </p>
+                    <p class="text-[11px] text-slate-600 mt-2">Control integral de servicios, insumos por mililitro y facturación.</p>
+                    <div class="mt-5 py-2 px-4 rounded-full bg-[#0A58CA] text-white text-center text-xs font-semibold">
+                        Sistema Activo
+                    </div>
+                </div>
+
+                <!-- Mockup Central Principal -->
+                <div class="relative z-10 w-64 bg-white rounded-[36px] p-5 shadow-2xl border-[5px] border-slate-900 transform -rotate-12 translate-x-10 translate-y-6">
+                    <div class="w-16 h-1.5 bg-slate-800 rounded-full mx-auto mb-4"></div>
+                    <div class="flex flex-col items-center mb-4" id="mockup-logo-container"></div>
+                    <div class="space-y-2.5 mt-3">
+                        <div class="px-3 py-2 rounded-xl border border-slate-200 text-[11px] text-slate-400 bg-slate-50">
+                            correo electrónico
+                        </div>
+                        <div class="px-3 py-2 rounded-xl border border-slate-200 text-[11px] text-slate-400 bg-slate-50">
+                            contraseña
+                        </div>
+                        <div class="pt-2">
+                            <div class="w-full py-2.5 rounded-full bg-[#0A58CA] text-white text-center text-xs font-semibold shadow-md">
+                                Iniciar sesión
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mt-4 pt-3 border-t border-slate-100 flex justify-between text-[10px] text-slate-500">
+                        <span>Lavados Express</span>
+                        <span class="text-blue-600 font-bold">24/7</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== APLICACIÓN PRINCIPAL ==================== -->
+    <div id="app-view" class="hidden min-h-screen flex flex-col lg:flex-row bg-[#DDF0F9]">
+        
+        <!-- Overlay móvil para sidebar -->
+        <div id="sidebar-overlay" onclick="toggleMobileSidebar()" class="fixed inset-0 bg-slate-900/40 z-30 hidden lg:hidden backdrop-blur-xs"></div>
+
+        <!-- BARRA LATERAL BLANCA -->
+        <aside id="sidebar" class="fixed lg:static inset-y-0 left-0 z-40 w-64 bg-white flex flex-col justify-between py-6 px-4 shadow-soft transform -translate-x-full lg:translate-x-0 transition-transform duration-300 ease-in-out shrink-0">
+            <div>
+                <!-- Logo Superior Sidebar -->
+                <div class="flex items-center justify-between px-2 mb-8">
+                    <div class="cursor-pointer" onclick="navigateTo('menu')" id="sidebar-logo-container"></div>
+                    <button onclick="toggleMobileSidebar()" class="lg:hidden p-1.5 rounded-lg text-slate-500 hover:bg-slate-100">
+                        <i data-lucide="x" class="w-5 h-5"></i>
+                    </button>
+                </div>
+
+                <!-- Navegación -->
+                <nav class="space-y-2" id="sidebar-nav">
+                    <button data-route="menu" onclick="navigateTo('menu')" class="nav-btn w-full flex items-center gap-3.5 px-4 py-3 rounded-full text-sm font-medium text-slate-700 hover:bg-sky-50 transition cursor-pointer">
+                        <i data-lucide="compass" class="w-5 h-5 text-slate-600"></i>
+                        <span>Menu</span>
+                    </button>
+
+                    <button data-route="productos" onclick="navigateTo('productos')" class="nav-btn w-full flex items-center gap-3.5 px-4 py-3 rounded-full text-sm font-medium text-slate-700 hover:bg-sky-50 transition cursor-pointer">
+                        <i data-lucide="package" class="w-5 h-5 text-slate-600"></i>
+                        <span>Productos</span>
+                    </button>
+
+                    <button data-route="agregar-producto" onclick="navigateTo('agregar-producto')" class="nav-btn w-full flex items-center gap-3.5 px-4 py-3 rounded-full text-sm font-medium text-slate-700 hover:bg-sky-50 transition cursor-pointer">
+                        <i data-lucide="package-plus" class="w-5 h-5 text-slate-600"></i>
+                        <span>Agregar productos</span>
+                    </button>
+
+                    <button data-route="ventas" onclick="navigateTo('ventas')" class="nav-btn w-full flex items-center gap-3.5 px-4 py-3 rounded-full text-sm font-medium text-slate-700 hover:bg-sky-50 transition cursor-pointer">
+                        <i data-lucide="wallet" class="w-5 h-5 text-slate-600"></i>
+                        <span>Ventas</span>
+                    </button>
+
+                    <button data-route="categorias" onclick="navigateTo('categorias')" class="nav-btn w-full flex items-center gap-3.5 px-4 py-3 rounded-full text-sm font-medium text-slate-700 hover:bg-sky-50 transition cursor-pointer">
+                        <i data-lucide="layers" class="w-5 h-5 text-slate-600"></i>
+                        <span>Categorías</span>
+                    </button>
+
+                    <!-- SOLO VISIBLE PARA ADMINISTRADOR (id_rol === 1) -->
+                    <button id="nav-empleados" data-route="empleados" onclick="navigateTo('empleados')" class="nav-btn w-full flex items-center gap-3.5 px-4 py-3 rounded-full text-sm font-medium text-slate-700 hover:bg-sky-50 transition cursor-pointer">
+                        <i data-lucide="users" class="w-5 h-5 text-slate-600"></i>
+                        <span>Empleados</span>
+                    </button>
+                </nav>
+            </div>
+
+            <!-- Pie de Sidebar: Ajustes -->
+            <div class="pt-6 border-t border-slate-100">
+                <button data-route="ajustes" onclick="navigateTo('ajustes')" class="nav-btn w-full flex items-center gap-3.5 px-4 py-3 rounded-full text-sm font-medium text-slate-700 hover:bg-sky-50 transition cursor-pointer">
+                    <i data-lucide="settings" class="w-5 h-5 text-slate-600"></i>
+                    <span>Ajustes</span>
+                </button>
+            </div>
+        </aside>
+
+        <!-- CONTENEDOR DERECHO (HEADER + CONTENIDO) -->
+        <div class="flex-1 flex flex-col min-w-0">
+            <!-- HEADER SUPERIOR BLANCO -->
+            <header class="bg-white h-20 px-4 sm:px-8 flex items-center justify-between gap-4 shadow-2xs sticky top-0 z-20">
+                <div class="flex items-center gap-3">
+                    <button onclick="toggleMobileSidebar()" class="lg:hidden p-2 rounded-xl text-slate-600 hover:bg-sky-50">
+                        <i data-lucide="menu" class="w-6 h-6"></i>
+                    </button>
+                    <span id="header-page-title" class="text-base sm:text-lg font-bold text-slate-800 hidden sm:inline-block">Panel Principal</span>
+                </div>
+
+                <!-- Barra de Búsqueda Global -->
+                <div id="global-search-wrapper" class="flex-1 max-w-md mx-2">
+                    <div class="relative">
+                        <i data-lucide="search" class="w-4 h-4 text-blue-600 absolute left-4 top-1/2 -translate-y-1/2"></i>
+                        <input type="text" id="global-search-input" oninput="handleGlobalSearch(this.value)"
+                            placeholder="Buscar productos, ventas, categorías..."
+                            class="w-full pl-11 pr-4 py-2.5 rounded-full bg-[#E1F3FC] text-sm text-slate-700 placeholder-blue-500/75 focus:outline-none focus:ring-2 focus:ring-blue-500 transition">
+                    </div>
+                </div>
+
+                <!-- Perfil Usuario Logueado -->
+            <div class="flex items-center gap-3">
+                <div id="cloud-status-badge" class="hidden sm:flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-semibold bg-sky-50 text-blue-700 border border-sky-200">
+                    <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+                    <span id="cloud-status-text">Supabase</span>
+                </div>
+                <button onclick="navigateTo('ajustes')" class="flex items-center gap-3 py-1.5 px-2.5 rounded-full hover:bg-sky-50 transition cursor-pointer">
+                        <img id="header-user-avatar" src="" alt="Avatar" class="w-10 h-10 rounded-full object-cover border-2 border-blue-200 bg-sky-100">
+                        <div class="text-left hidden md:block">
+                            <p id="header-user-name" class="text-sm font-semibold text-slate-800 leading-tight">Usuario</p>
+                            <p id="header-user-role" class="text-[11px] font-medium text-blue-600">Rol</p>
+                        </div>
+                    </button>
+                </div>
+            </header>
+
+            <!-- ÁREA DE CONTENIDO DINÁMICO -->
+            <main id="main-content" class="flex-1 p-4 sm:p-6 lg:p-8 max-w-[1440px] w-full mx-auto">
+                <!-- Se renderiza dinámicamente mediante JS -->
+            </main>
+        </div>
+    </div>
+
+    <!-- ==================== MODAL: EDITAR PRODUCTO (CAPTURA 4) ==================== -->
+    <div id="modal-edit-product" class="fixed inset-0 bg-slate-900/50 backdrop-blur-xs z-50 hidden items-center justify-center p-4">
+        <div class="bg-white rounded-[24px] max-w-lg w-full p-6 sm:p-8 shadow-2xl relative animate-fade-in">
+            <button onclick="closeModal('modal-edit-product')" class="absolute top-5 right-5 text-slate-400 hover:text-slate-700 p-1 rounded-full hover:bg-slate-100">
+                <i data-lucide="x" class="w-5 h-5"></i>
+            </button>
+
+            <h2 class="text-2xl font-bold text-[#0F2942] text-center mb-5">Editar producto</h2>
+
+            <form id="form-edit-product" onsubmit="saveEditedProduct(event)" class="space-y-4">
+                <input type="hidden" id="edit-prod-id">
+                <input type="hidden" id="edit-prod-img-data">
+
+                <!-- Vista previa imagen -->
+                <div class="flex flex-col items-center mb-2">
+                    <div class="w-32 h-32 rounded-2xl border border-slate-200 p-2 flex items-center justify-center bg-slate-50 overflow-hidden mb-2">
+                        <img id="edit-prod-preview" src="" alt="Producto" class="max-h-full max-w-full object-contain">
+                    </div>
+                    <label class="text-xs font-semibold text-blue-600 hover:underline cursor-pointer">
+                        Cambiar imagen
+                        <input type="file" accept="image/*" class="hidden" onchange="handleImageUpload(event, 'edit-prod-preview', 'edit-prod-img-data')">
+                    </label>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-12 gap-3.5">
+                    <div class="sm:col-span-6">
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">Nombre</label>
+                        <input type="text" id="edit-prod-nombre" required class="w-full px-3.5 py-2 rounded-xl border border-slate-300 text-sm focus:outline-none focus:border-blue-600">
+                    </div>
+                    <div class="sm:col-span-3">
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">Stock (ml)</label>
+                        <input type="number" id="edit-prod-stock" min="0" required class="w-full px-3.5 py-2 rounded-xl border border-slate-300 text-sm focus:outline-none focus:border-blue-600">
+                    </div>
+                    <div class="sm:col-span-3">
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">Precio ($/ml)</label>
+                        <input type="number" id="edit-prod-precio" step="0.01" min="0" required class="w-full px-3.5 py-2 rounded-xl border border-slate-300 text-sm focus:outline-none focus:border-blue-600">
+                    </div>
+
+                    <div class="sm:col-span-6">
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">Marca</label>
+                        <input type="text" id="edit-prod-marca" class="w-full px-3.5 py-2 rounded-xl border border-slate-300 text-sm focus:outline-none focus:border-blue-600">
+                    </div>
+                    <div class="sm:col-span-6">
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">Fecha de compra</label>
+                        <input type="date" id="edit-prod-fecha" class="w-full px-3.5 py-2 rounded-xl border border-slate-300 text-sm focus:outline-none focus:border-blue-600">
+                    </div>
+
+                    <div class="sm:col-span-6">
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">Categoría</label>
+                        <select id="edit-prod-categoria" required class="w-full px-3.5 py-2 rounded-xl border border-slate-300 text-sm bg-white focus:outline-none focus:border-blue-600"></select>
+                    </div>
+                    <div class="sm:col-span-6 flex items-end">
+                        <button type="submit" class="w-full py-2.5 px-6 rounded-full btn-cobalt text-white font-semibold text-sm shadow-pill cursor-pointer">
+                            Guardar
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ==================== MODAL: FACTURA DETALLADA (sp_ObtenerFacturaCalculada) ==================== -->
+    <div id="modal-invoice" class="fixed inset-0 bg-slate-900/50 backdrop-blur-xs z-50 hidden items-center justify-center p-4">
+        <div class="bg-white rounded-[24px] max-w-lg w-full p-6 sm:p-8 shadow-2xl relative">
+            <button onclick="closeModal('modal-invoice')" class="absolute top-5 right-5 text-slate-400 hover:text-slate-700 p-1 rounded-full hover:bg-slate-100">
+                <i data-lucide="x" class="w-5 h-5"></i>
+            </button>
+            <div id="invoice-printable"></div>
+            <div class="mt-6 flex justify-end gap-3">
+                <button onclick="window.print()" class="px-5 py-2.5 rounded-full bg-sky-100 text-blue-700 font-semibold text-sm hover:bg-sky-200 transition flex items-center gap-2 cursor-pointer">
+                    <i data-lucide="printer" class="w-4 h-4"></i> Imprimir Comprobante
+                </button>
+                <button onclick="closeModal('modal-invoice')" class="px-6 py-2.5 rounded-full btn-cobalt text-white font-semibold text-sm cursor-pointer">
+                    Cerrar
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== MODAL: GESTIÓN DE SERVICIOS DE LAVADO ==================== -->
+    <div id="modal-services" class="fixed inset-0 bg-slate-900/50 backdrop-blur-xs z-50 hidden items-center justify-center p-4">
+        <div class="bg-white rounded-[24px] max-w-xl w-full p-6 sm:p-8 shadow-2xl relative max-h-[90vh] overflow-y-auto">
+            <button onclick="closeModal('modal-services')" class="absolute top-5 right-5 text-slate-400 hover:text-slate-700 p-1 rounded-full hover:bg-slate-100">
+                <i data-lucide="x" class="w-5 h-5"></i>
+            </button>
+            <h2 class="text-xl font-bold text-[#0F2942] mb-1">Catálogo de Servicios de Lavado</h2>
+            <p class="text-xs text-slate-500 mb-5">Administra los tipos de lavado y sus tarifas base.</p>
+
+            <form onsubmit="addNewService(event)" class="grid grid-cols-1 sm:grid-cols-12 gap-3 mb-6 bg-sky-50/70 p-4 rounded-2xl border border-sky-100">
+                <div class="sm:col-span-6">
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">Nombre del servicio</label>
+                    <input type="text" id="new-srv-name" required placeholder="Ej. Lavado en Seco" class="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white text-sm">
+                </div>
+                <div class="sm:col-span-3">
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">Precio ($)</label>
+                    <input type="number" id="new-srv-price" step="0.01" min="0" required placeholder="5.00" class="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white text-sm">
+                </div>
+                <div class="sm:col-span-3 flex items-end">
+                    <button type="submit" class="w-full py-2 px-4 rounded-full btn-cobalt text-white text-xs font-semibold cursor-pointer">
+                        Agregar
+                    </button>
+                </div>
+            </form>
+
+            <div id="services-modal-list" class="space-y-2.5"></div>
+        </div>
+    </div>
+
+    <!-- ==================== MODAL: BITÁCORA DE AUDITORÍA (SOLO ADMIN) ==================== -->
+    <div id="modal-audit" class="fixed inset-0 bg-slate-900/50 backdrop-blur-xs z-50 hidden items-center justify-center p-4">
+        <div class="bg-white rounded-[24px] max-w-3xl w-full p-6 sm:p-8 shadow-2xl relative max-h-[85vh] flex flex-col">
+            <button onclick="closeModal('modal-audit')" class="absolute top-5 right-5 text-slate-400 hover:text-slate-700 p-1 rounded-full hover:bg-slate-100">
+                <i data-lucide="x" class="w-5 h-5"></i>
+            </button>
+            <div class="flex items-center gap-2.5 mb-4">
+                <div class="w-10 h-10 rounded-xl bg-blue-100 text-blue-700 flex items-center justify-center">
+                    <i data-lucide="shield-check" class="w-5 h-5"></i>
+                </div>
+                <div>
+                    <h2 class="text-xl font-bold text-[#0F2942]">Bitácora de Auditoría (Triggers)</h2>
+                    <p class="text-xs text-slate-500">Registro automático de operaciones críticas (SOFT_DELETE, UPDATE_PRECIO, VENTAS).</p>
+                </div>
+            </div>
+            <div id="audit-log-list" class="flex-1 overflow-y-auto space-y-2.5 pr-1"></div>
+        </div>
+    </div>
+
+    <!-- ==================== MODAL: CONFIRMACIÓN PERSONALIZADA ==================== -->
+    <div id="modal-confirm" class="fixed inset-0 bg-slate-900/50 backdrop-blur-xs z-50 hidden items-center justify-center p-4">
+        <div class="bg-white rounded-[24px] max-w-sm w-full p-6 shadow-2xl text-center">
+            <div class="w-14 h-14 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center mx-auto mb-4">
+                <i data-lucide="alert-triangle" class="w-7 h-7"></i>
+            </div>
+            <h3 id="confirm-title" class="text-lg font-bold text-slate-800 mb-2">¿Confirmar acción?</h3>
+            <p id="confirm-message" class="text-sm text-slate-500 mb-6">Esta acción actualizará los registros del sistema.</p>
+            <div class="flex gap-3 justify-center">
+                <button onclick="closeModal('modal-confirm')" class="px-5 py-2.5 rounded-full bg-slate-100 text-slate-700 font-semibold text-sm hover:bg-slate-200 cursor-pointer">
+                    Cancelar
+                </button>
+                <button id="confirm-accept-btn" class="px-6 py-2.5 rounded-full btn-cobalt text-white font-semibold text-sm cursor-pointer">
+                    Confirmar
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // =========================================================================
+        // 0. CONFIGURACIÓN DE SUPABASE (PEGA AQUÍ TUS CREDENCIALES DE SUPABASE)
+        // =========================================================================
+        const SUPABASE_URL = 'https://xkypcmmexrxeewsenigf.supabase.co';
+        const SUPABASE_ANON_KEY = 'sb_publishable_a3-3O68SYYekFMBg_MpTxw_X3GfilNO';
+        
+        const isSupabaseConfigured =
+            SUPABASE_URL &&
+            SUPABASE_ANON_KEY &&
+            !SUPABASE_URL.includes('TU_SUPABASE_URL_AQUI') &&
+            !SUPABASE_ANON_KEY.includes('TU_SUPABASE_ANON_KEY_AQUI') &&
+            SUPABASE_URL.startsWith('http');
+
+        const supabaseClient = isSupabaseConfigured
+            ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
+            : null;
+
+        // =========================================================================
+        // 1. ASSETS SVG / DATA URI INTEGRADOS (CERO ENLACES EXTERNOS ROTOS)
+        // =========================================================================
+        function getLogoSVG(variant = 'color') {
+            const strokeColor = variant === 'white' ? '#FFFFFF' : '#4FC3F7';
+            const titleColor = variant === 'white' ? '#FFFFFF' : '#38BDF8';
+            const subColor = variant === 'white' ? '#E0F2FE' : '#1E3A8A';
+            return `
+            <div class="flex items-center gap-2.5 select-none">
+                <svg width="58" height="48" viewBox="0 0 120 96" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <!-- Techo casita -->
+                    <path d="M12 46L60 12L108 46" stroke="${strokeColor}" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M84 28V16H96V36" stroke="${strokeColor}" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+                    <!-- Lavadora central -->
+                    <rect x="38" y="38" width="44" height="48" rx="6" stroke="${strokeColor}" stroke-width="4.5"/>
+                    <line x1="38" y1="50" x2="82" y2="50" stroke="${strokeColor}" stroke-width="3.5"/>
+                    <circle cx="47" cy="44" r="2.5" fill="${strokeColor}"/>
+                    <circle cx="55" cy="44" r="2.5" fill="${strokeColor}"/>
+                    <circle cx="60" cy="68" r="12" stroke="${strokeColor}" stroke-width="4"/>
+                    <path d="M51 69C54 65 58 72 62 68C65 65 68 68 69 69" stroke="${strokeColor}" stroke-width="3" stroke-linecap="round"/>
+                    <!-- Canasta de ropa derecha -->
+                    <path d="M88 64H110L106 86H92L88 64Z" stroke="${strokeColor}" stroke-width="4" stroke-linejoin="round"/>
+                    <path d="M91 64C92 58 98 58 100 63C102 58 107 59 108 64" stroke="${strokeColor}" stroke-width="3.5" stroke-linecap="round"/>
+                    <!-- Burbujas y destellos -->
+                    <circle cx="24" cy="62" r="6" stroke="${strokeColor}" stroke-width="3.5"/>
+                    <circle cx="20" cy="78" r="8" stroke="${strokeColor}" stroke-width="3.5"/>
+                    <path d="M22 20L24 25L29 27L24 29L22 34L20 29L15 27L20 25L22 20Z" fill="${strokeColor}"/>
+                    <path d="M104 14L105.5 18L109.5 19.5L105.5 21L104 25L102.5 21L98.5 19.5L102.5 18L104 14Z" fill="${strokeColor}"/>
+                </svg>
+                <div class="leading-none">
+                    <div class="font-extrabold tracking-wide text-base sm:text-lg" style="color:${titleColor}">AQUA CLEAN</div>
+                    <div class="font-bold tracking-[0.22em] text-[10px] sm:text-[11px] mt-1" style="color:${subColor}">LAVANDERÍA</div>
+                </div>
+            </div>`;
+        }
+
+        function createBottleDataURI(primaryHex, secondaryHex, labelText, subText) {
+            const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="180" height="200" viewBox="0 0 180 200">
+                <rect width="180" height="200" rx="20" fill="#F8FAFC"/>
+                <!-- Tapa -->
+                <rect x="64" y="18" width="34" height="18" rx="5" fill="${secondaryHex}"/>
+                <rect x="60" y="34" width="42" height="8" rx="3" fill="#CBD5E1"/>
+                <!-- Cuerpo botella con asa -->
+                <path d="M52 42 H112 C132 42 142 58 142 82 V166 C142 178 132 184 118 184 H54 C42 184 36 176 36 164 V74 C36 54 42 42 52 42 Z" fill="${primaryHex}"/>
+                <!-- Hueco del asa -->
+                <rect x="112" y="64" width="16" height="44" rx="8" fill="#F8FAFC"/>
+                <!-- Brillo -->
+                <path d="M48 64 C48 54 54 50 62 50" stroke="rgba(255,255,255,0.45)" stroke-width="5" stroke-linecap="round" fill="none"/>
+                <!-- Etiqueta -->
+                <rect x="46" y="88" width="66" height="72" rx="12" fill="#FFFFFF"/>
+                <circle cx="79" cy="112" r="14" fill="${secondaryHex}" opacity="0.2"/>
+                <text x="79" y="117" font-family="Arial, sans-serif" font-weight="bold" font-size="14" fill="${primaryHex}" text-anchor="middle">${labelText}</text>
+                <text x="79" y="138" font-family="Arial, sans-serif" font-weight="bold" font-size="9" fill="#475569" text-anchor="middle">${subText}</text>
+                <rect x="58" y="146" width="42" height="5" rx="2.5" fill="${secondaryHex}"/>
+            </svg>`;
+            return 'data:image/svg+xml;utf8,' + encodeURIComponent(svg);
+        }
+
+        function createAvatarDataURI(initials, bg1, bg2) {
+            const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="140" height="140" viewBox="0 0 140 140">
+                <defs>
+                    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+                        <stop offset="0%" stop-color="${bg1}"/>
+                        <stop offset="100%" stop-color="${bg2}"/>
+                    </linearGradient>
+                </defs>
+                <circle cx="70" cy="70" r="70" fill="url(#g)"/>
+                <circle cx="70" cy="52" r="22" fill="rgba(255,255,255,0.85)"/>
+                <path d="M32 122 C32 95 108 95 108 122" fill="rgba(255,255,255,0.85)"/>
+                <text x="70" y="132" font-family="Arial, sans-serif" font-weight="bold" font-size="14" fill="#FFFFFF" text-anchor="middle">${initials}</text>
+            </svg>`;
+            return 'data:image/svg+xml;utf8,' + encodeURIComponent(svg);
+        }
+
+        const DEFAULT_BOTTLE_IMG = createBottleDataURI('#0284C7', '#38BDF8', 'AQUA', 'INSUMO');
+
+        // =========================================================================
+        // 2. CAPA DE DATOS HÍBRIDA: SUPABASE POSTGRESQL + CACHÉ / FALLBACK LOCAL
+        // =========================================================================
+        const DB_KEY = 'aquaclean_db_v1';
+        const SESSION_KEY = 'aquaclean_session_v1';
+
+        // Caché en memoria sincronizada con Supabase (o LocalStorage en modo demo)
+        let dbCache = null;
+
+        function getInitialDB() {
+            return {
+                roles: [
+                    { id_rol: 1, nombre_rol: 'Administrador' },
+                    { id_rol: 2, nombre_rol: 'Empleado' }
+                ],
+                usuarios: [
+                    {
+                        id_usuario: 1,
+                        nombre: 'Monica Castro',
+                        correo: 'monica@aquaclean.com',
+                        telefono: '7788-9900',
+                        estado: true,
+                        foto_perfil: createAvatarDataURI('MC', '#0A58CA', '#38BDF8'),
+                        id_rol: 1,
+                        clave: '123456'
+                    },
+                    {
+                        id_usuario: 2,
+                        nombre: 'Eduardo López',
+                        correo: 'eduardo@aquaclean.com',
+                        telefono: '7123-4567',
+                        estado: true,
+                        foto_perfil: createAvatarDataURI('EL', '#0284C7', '#06B6D4'),
+                        id_rol: 2,
+                        clave: '123456'
+                    },
+                    {
+                        id_usuario: 3,
+                        nombre: 'Fernanda Hernández',
+                        correo: 'admin@aquaclean.com',
+                        telefono: '7788-9900',
+                        estado: true,
+                        foto_perfil: createAvatarDataURI('FH', '#1D4ED8', '#60A5FA'),
+                        id_rol: 1,
+                        clave: '123456'
+                    }
+                ],
+                servicios_lavados: [
+                    { id_servicio: 1, nombre_servicio: 'Lavado Normal (Carga 15 lb)', precio_lavado: 4.50, estado: true },
+                    { id_servicio: 2, nombre_servicio: 'Lavado Secado Seca-Rápido', precio_lavado: 6.00, estado: true },
+                    { id_servicio: 3, nombre_servicio: 'Lavado de Edredones / Cobijas', precio_lavado: 8.50, estado: true }
+                ],
+                categorias: [
+                    { id_categoria: 1, nombre_categoria: 'Detergentes Líquidos' },
+                    { id_categoria: 2, nombre_categoria: 'Suavizantes y Enjuagues' },
+                    { id_categoria: 3, nombre_categoria: 'Blanqueadores y Desinfectantes' }
+                ],
+                productos: [
+                    {
+                        id_producto: 1,
+                        nombre: 'Detergente Concentrado Floral',
+                        marca: 'Xedex',
+                        precio: 0.05,
+                        fecha_compra: '2026-10-01',
+                        id_categoria: 1,
+                        imagen: createBottleDataURI('#1D4ED8', '#60A5FA', 'Xedex', 'DETERGENTE'),
+                        stock: 5000,
+                        estado: true
+                    },
+                    {
+                        id_producto: 2,
+                        nombre: 'Suavizante Caricia Primaveral',
+                        marca: 'Downy',
+                        precio: 0.04,
+                        fecha_compra: '2026-10-05',
+                        id_categoria: 2,
+                        imagen: createBottleDataURI('#EA580C', '#FDBA74', 'Downy', 'SUAVIZANTE'),
+                        stock: 4000,
+                        estado: true
+                    },
+                    {
+                        id_producto: 3,
+                        nombre: 'Cloro Blanqueador Multiusos',
+                        marca: 'Clorox',
+                        precio: 0.02,
+                        fecha_compra: '2026-10-10',
+                        id_categoria: 3,
+                        imagen: createBottleDataURI('#059669', '#6EE7B7', 'Clorox', 'BLANQUEADOR'),
+                        stock: 3000,
+                        estado: true
+                    }
+                ],
+                ventas: [
+                    {
+                        id_ventas: 1,
+                        cliente: 'Carlos Mendoza',
+                        fecha_venta: '2026-10-15T10:30:00',
+                        id_usuario: 2
+                    }
+                ],
+                detalle_venta_servicio: [
+                    {
+                        id_venta: 1,
+                        id_servicio: 1,
+                        cantidad: 1,
+                        peso_lb: 15.00,
+                        precio_unitario_historico: 4.50,
+                        subtotal_servicio: 4.50
+                    },
+                    {
+                        id_venta: 1,
+                        id_servicio: 3,
+                        cantidad: 1,
+                        peso_lb: null,
+                        precio_unitario_historico: 8.50,
+                        subtotal_servicio: 8.50
+                    }
+                ],
+                detalle_venta_product: [
+                    {
+                        id_venta: 1,
+                        id_producto: 1,
+                        cantidad_ml: 100,
+                        precio_unitario_historico: 0.05,
+                        subtotal_producto: 5.00
+                    },
+                    {
+                        id_venta: 1,
+                        id_producto: 2,
+                        cantidad_ml: 50,
+                        precio_unitario_historico: 0.04,
+                        subtotal_producto: 2.00
+                    }
+                ],
+                bitacora_auditoria: [
+                    {
+                        id_bitacora: 1,
+                        tabla_afectada: 'sistema',
+                        operacion: 'INIT_DB',
+                        usuario_accion: 'SYSTEM',
+                        fecha_movimiento: '2026-10-01T08:00:00',
+                        detalle_cambio: 'Inicialización de base de datos Aqua Clean Lavandería en LocalStorage.'
+                    }
+                ]
+            };
+        }
+
+        function loadDB() {
+            if (dbCache) return dbCache;
+            const raw = localStorage.getItem(DB_KEY);
+            if (!raw) {
+                const initial = getInitialDB();
+                localStorage.setItem(DB_KEY, JSON.stringify(initial));
+                dbCache = initial;
+                return initial;
+            }
+            try {
+                dbCache = JSON.parse(raw);
+                // Asegurar que Monica Castro exista si había una caché anterior en localStorage
+                if (!isSupabaseConfigured && dbCache.usuarios && !dbCache.usuarios.some(u => u.correo.toLowerCase() === 'monica@aquaclean.com')) {
+                    dbCache.usuarios.unshift({
+                        id_usuario: Date.now(),
+                        nombre: 'Monica Castro',
+                        correo: 'monica@aquaclean.com',
+                        telefono: '7788-9900',
+                        estado: true,
+                        foto_perfil: createAvatarDataURI('MC', '#0A58CA', '#38BDF8'),
+                        id_rol: 1,
+                        clave: '123456'
+                    });
+                    localStorage.setItem(DB_KEY, JSON.stringify(dbCache));
+                }
+                return dbCache;
+            } catch (e) {
+                const initial = getInitialDB();
+                localStorage.setItem(DB_KEY, JSON.stringify(initial));
+                dbCache = initial;
+                return initial;
+            }
+        }
+
+        function saveDB(db) {
+            dbCache = db;
+            localStorage.setItem(DB_KEY, JSON.stringify(db));
+        }
+
+        // Sincronización completa desde Supabase PostgreSQL hacia dbCache
+        async function syncFromSupabase(silent = true) {
+            if (!supabaseClient) return loadDB();
+
+            try {
+                const [
+                    resRoles,
+                    resUsuarios,
+                    resServicios,
+                    resCategorias,
+                    resProductos,
+                    resVentas,
+                    resDetServ,
+                    resDetProd,
+                    resBitacora
+                ] = await Promise.all([
+                    supabaseClient.from('roles').select('*').order('id_rol', { ascending: true }),
+                    supabaseClient.from('usuarios').select('*').order('id_usuario', { ascending: true }),
+                    supabaseClient.from('servicios_lavados').select('*').order('id_servicio', { ascending: true }),
+                    supabaseClient.from('categorias').select('*').order('id_categoria', { ascending: true }),
+                    supabaseClient.from('productos').select('*').order('id_producto', { ascending: true }),
+                    supabaseClient.from('ventas').select('*').order('id_ventas', { ascending: true }),
+                    supabaseClient.from('detalle_venta_servicio').select('*'),
+                    supabaseClient.from('detalle_venta_product').select('*'),
+                    supabaseClient.from('bitacora_auditoria').select('*').order('id_bitacora', { ascending: false }).limit(100)
+                ]);
+
+                const firstError = [
+                    resRoles.error, resUsuarios.error, resServicios.error,
+                    resCategorias.error, resProductos.error, resVentas.error,
+                    resDetServ.error, resDetProd.error, resBitacora.error
+                ].find(Boolean);
+
+                if (firstError) throw firstError;
+
+                const synced = {
+                    roles: resRoles.data || [],
+                    usuarios: resUsuarios.data || [],
+                    servicios_lavados: (resServicios.data || []).map(s => ({ ...s, precio_lavado: Number(s.precio_lavado) })),
+                    categorias: resCategorias.data || [],
+                    productos: (resProductos.data || []).map(p => ({ ...p, precio: Number(p.precio), stock: Number(p.stock) })),
+                    ventas: resVentas.data || [],
+                    detalle_venta_servicio: (resDetServ.data || []).map(d => ({
+                        ...d,
+                        cantidad: Number(d.cantidad),
+                        peso_lb: d.peso_lb !== null ? Number(d.peso_lb) : null,
+                        precio_unitario_historico: Number(d.precio_unitario_historico),
+                        subtotal_servicio: Number(d.subtotal_servicio)
+                    })),
+                    detalle_venta_product: (resDetProd.data || []).map(d => ({
+                        ...d,
+                        cantidad_ml: Number(d.cantidad_ml),
+                        precio_unitario_historico: Number(d.precio_unitario_historico),
+                        subtotal_producto: Number(d.subtotal_producto)
+                    })),
+                    bitacora_auditoria: resBitacora.data || []
+                };
+
+                saveDB(synced);
+                if (!silent) showToast('Datos sincronizados con Supabase.', 'success');
+                return synced;
+            } catch (err) {
+                console.error('Error sincronizando con Supabase:', err);
+                showToast('Error de conexión con Supabase: ' + (err.message || 'Verifica tus tablas y llaves'), 'error');
+                return loadDB();
+            }
+        }
+
+        // Suscripción Realtime a cambios en Supabase
+        function setupSupabaseRealtime() {
+            if (!supabaseClient) return;
+            supabaseClient
+                .channel('aquaclean-realtime')
+                .on('postgres_changes', { event: '*', schema: 'public' }, async () => {
+                    await syncFromSupabase(true);
+                    if (getCurrentUser()) {
+                        renderCurrentRoute();
+                    }
+                })
+                .subscribe();
+        }
+
+        // Equivalente a Triggers de Auditoría en PostgreSQL / Local
+        async function registrarBitacora(db, tabla, operacion, detalle) {
+            const user = getCurrentUser();
+            const usuarioAccion = user ? `${user.nombre} (${user.correo})` : 'SYSTEM';
+
+            if (supabaseClient) {
+                const { error } = await supabaseClient.from('bitacora_auditoria').insert([{
+                    tabla_afectada: tabla,
+                    operacion: operacion,
+                    usuario_accion: usuarioAccion,
+                    detalle_cambio: detalle
+                }]);
+                if (error) console.error('Error registrando bitácora en Supabase:', error);
+            } else {
+                const nextId = db.bitacora_auditoria.length > 0
+                    ? Math.max(...db.bitacora_auditoria.map(b => b.id_bitacora)) + 1
+                    : 1;
+                db.bitacora_auditoria.unshift({
+                    id_bitacora: nextId,
+                    tabla_afectada: tabla,
+                    operacion: operacion,
+                    usuario_accion: usuarioAccion,
+                    fecha_movimiento: new Date().toISOString(),
+                    detalle_cambio: detalle
+                });
+            }
+        }
+
+        // Equivalente a sp_ObtenerFacturaCalculada
+        function sp_ObtenerFacturaCalculada(db, id_venta) {
+            const venta = db.ventas.find(v => v.id_ventas === id_venta);
+            if (!venta) return null;
+            const usuario = db.usuarios.find(u => u.id_usuario === venta.id_usuario);
+            const servicios = db.detalle_venta_servicio
+                .filter(d => d.id_venta === id_venta)
+                .map(d => {
+                    const srv = db.servicios_lavados.find(s => s.id_servicio === d.id_servicio);
+                    return {
+                        ...d,
+                        nombre_servicio: srv ? srv.nombre_servicio : `Servicio #${d.id_servicio}`
+                    };
+                });
+            const productos = db.detalle_venta_product
+                .filter(d => d.id_venta === id_venta)
+                .map(d => {
+                    const prod = db.productos.find(p => p.id_producto === d.id_producto);
+                    return {
+                        ...d,
+                        nombre_producto: prod ? prod.nombre : `Producto #${d.id_producto}`,
+                        marca: prod ? prod.marca : ''
+                    };
+                });
+
+            const total_servicios = servicios.reduce((acc, s) => acc + Number(s.subtotal_servicio), 0);
+            const total_productos = productos.reduce((acc, p) => acc + Number(p.subtotal_producto), 0);
+            const total_factura = total_servicios + total_productos;
+
+            return {
+                id_ventas: venta.id_ventas,
+                cliente: venta.cliente,
+                fecha_venta: venta.fecha_venta,
+                id_usuario: venta.id_usuario,
+                atendido_por: usuario ? usuario.nombre : 'Personal Aqua Clean',
+                servicios,
+                productos,
+                total_servicios: Number(total_servicios.toFixed(2)),
+                total_productos: Number(total_productos.toFixed(2)),
+                total_factura: Number(total_factura.toFixed(2))
+            };
+        }
+
+        // =========================================================================
+        // 3. ESTADO GLOBAL DE LA INTERFAZ Y SESIÓN
+        // =========================================================================
+        let state = {
+            currentRoute: 'menu',
+            searchQuery: '',
+            salesChartInstance: null,
+            // Estado del formulario de Ventas (Nueva Venta o Editar Venta)
+            saleForm: {
+                editingId: null, // null = Nueva Venta, number = Editar Venta (Solo Admin)
+                cliente: '',
+                servicios: [], // [{ id_servicio, cantidad, peso_lb, precio_unitario_historico }]
+                productos: []  // [{ id_producto, cantidad_ml, precio_unitario_historico }]
+            },
+            // Estado para mostrar/ocultar contraseñas en empleados
+            visiblePasswords: {},
+            // Edición inline en perfil
+            editingProfileField: null,
+            // Avatar temporal en formulario de nuevo empleado
+            newEmpAvatar: createAvatarDataURI('EMP', '#0A58CA', '#60A5FA')
+        };
+
+        function getCurrentUser() {
+            const uid = localStorage.getItem(SESSION_KEY);
+            if (!uid) return null;
+            const db = loadDB();
+            const user = db.usuarios.find(u => u.id_usuario === Number(uid) && u.estado === true);
+            return user || null;
+        }
+
+        function isAdmin() {
+            const user = getCurrentUser();
+            return user && user.id_rol === 1;
+        }
+
+        // =========================================================================
+        // 4. UTILIDADES UI (TOASTS, MODALES, FORMATOS)
+        // =========================================================================
+        function showToast(message, type = 'success') {
+            const container = document.getElementById('toast-container');
+            const colors = {
+                success: 'bg-white border-l-4 border-emerald-500 text-slate-800',
+                error: 'bg-white border-l-4 border-rose-500 text-slate-800',
+                info: 'bg-white border-l-4 border-blue-600 text-slate-800'
+            };
+            const icons = {
+                success: '<i data-lucide="check-circle-2" class="w-5 h-5 text-emerald-500 shrink-0"></i>',
+                error: '<i data-lucide="alert-circle" class="w-5 h-5 text-rose-500 shrink-0"></i>',
+                info: '<i data-lucide="info" class="w-5 h-5 text-blue-600 shrink-0"></i>'
+            };
+
+            const toast = document.createElement('div');
+            toast.className = `pointer-events-auto flex items-center gap-3 p-4 rounded-2xl shadow-xl ${colors[type] || colors.info} transition-all duration-300 transform translate-x-0`;
+            toast.innerHTML = `${icons[type] || icons.info}<span class="text-sm font-medium">${message}</span>`;
+            container.appendChild(toast);
+            lucide.createIcons();
+
+            setTimeout(() => {
+                toast.classList.add('opacity-0', 'translate-x-4');
+                setTimeout(() => toast.remove(), 300);
+            }, 3400);
+        }
+
+        function openModal(id) {
+            const el = document.getElementById(id);
+            if (el) {
+                el.classList.remove('hidden');
+                el.classList.add('flex');
+                lucide.createIcons();
+            }
+        }
+
+        function closeModal(id) {
+            const el = document.getElementById(id);
+            if (el) {
+                el.classList.add('hidden');
+                el.classList.remove('flex');
+            }
+        }
+
+        function openConfirmModal(title, message, onConfirm) {
+            document.getElementById('confirm-title').textContent = title;
+            document.getElementById('confirm-message').textContent = message;
+            const btn = document.getElementById('confirm-accept-btn');
+            btn.onclick = () => {
+                closeModal('modal-confirm');
+                onConfirm();
+            };
+            openModal('modal-confirm');
+        }
+
+        function formatDate(isoStr) {
+            if (!isoStr) return 'Sin fecha';
+            const d = new Date(isoStr.includes('T') ? isoStr : isoStr + 'T12:00:00');
+            if (isNaN(d.getTime())) return isoStr;
+            return d.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' });
+        }
+
+        function formatMoney(val) {
+            return '$' + Number(val || 0).toFixed(2);
+        }
+
+        function handleImageUpload(event, previewImgId, hiddenInputId, callback) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const dataUrl = e.target.result;
+                if (previewImgId) {
+                    const imgEl = document.getElementById(previewImgId);
+                    if (imgEl) imgEl.src = dataUrl;
+                }
+                if (hiddenInputId) {
+                    const inputEl = document.getElementById(hiddenInputId);
+                    if (inputEl) inputEl.value = dataUrl;
+                }
+                if (callback) callback(dataUrl);
+            };
+            reader.readAsDataURL(file);
+        }
+
+        // =========================================================================
+        // 5. AUTENTICACIÓN (LOGIN / LOGOUT)
+        // =========================================================================
+        function toggleLoginPassword() {
+            const input = document.getElementById('login-pass');
+            const icon = document.getElementById('login-eye-icon');
+            if (input.type === 'password') {
+                input.type = 'text';
+                icon.setAttribute('data-lucide', 'eye-off');
+            } else {
+                input.type = 'password';
+                icon.setAttribute('data-lucide', 'eye');
+            }
+            lucide.createIcons();
+        }
+
+        function quickFillLogin(user, pass) {
+            document.getElementById('login-user').value = user;
+            document.getElementById('login-pass').value = pass;
+        }
+
+        document.getElementById('login-form').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const userQuery = document.getElementById('login-user').value.trim().toLowerCase();
+            const passQuery = document.getElementById('login-pass').value.trim();
+
+            const submitBtn = this.querySelector('button[type="submit"]');
+            const originalText = submitBtn.textContent;
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Verificando...';
+
+            try {
+                if (supabaseClient) {
+                    const { data: sbUsers, error: sbErr } = await supabaseClient
+                        .from('usuarios')
+                        .select('*');
+
+                    if (sbErr) {
+                        showToast('Error leyendo tabla usuarios en Supabase: ' + sbErr.message, 'error');
+                        return;
+                    }
+
+                    if (!sbUsers || sbUsers.length === 0) {
+                        showToast('La tabla "usuarios" en Supabase está vacía o bloqueada por RLS.', 'error');
+                        return;
+                    }
+
+                    await syncFromSupabase(true);
+                }
+
+                const db = loadDB();
+                const found = db.usuarios.find(u =>
+                    (u.estado === true || u.estado === 'true' || u.estado === 1) &&
+                    ((u.correo || '').trim().toLowerCase() === userQuery ||
+                     (u.nombre || '').trim().toLowerCase() === userQuery ||
+                     (u.nombre || '').trim().split(' ')[0].toLowerCase() === userQuery) &&
+                    String(u.clave || '').trim() === passQuery
+                );
+
+                if (!found) {
+                    showToast('Credenciales incorrectas o usuario inactivo.', 'error');
+                    return;
+                }
+
+                localStorage.setItem(SESSION_KEY, String(found.id_usuario));
+                showToast(`¡Bienvenido(a), ${found.nombre}!`, 'success');
+                await initAppShell();
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.textContent = originalText;
+            }
+        });
+
+        function logout() {
+            localStorage.removeItem(SESSION_KEY);
+            state.currentRoute = 'menu';
+            state.searchQuery = '';
+            document.getElementById('login-pass').value = '';
+            document.getElementById('app-view').classList.add('hidden');
+            document.getElementById('login-view').classList.remove('hidden');
+            showToast('Sesión cerrada correctamente.', 'info');
+        }
+
+        // =========================================================================
+        // 6. SHELL DE APLICACIÓN, NAVEGACIÓN Y CONTROL DE ROLES
+        // =========================================================================
+        async function initAppShell() {
+            if (supabaseClient) {
+                await syncFromSupabase(true);
+            }
+
+            const user = getCurrentUser();
+            if (!user) {
+                document.getElementById('login-view').classList.remove('hidden');
+                document.getElementById('app-view').classList.add('hidden');
+                return;
+            }
+
+            const db = loadDB();
+            const roleObj = db.roles.find(r => r.id_rol === user.id_rol);
+
+            document.getElementById('login-view').classList.add('hidden');
+            document.getElementById('app-view').classList.remove('hidden');
+
+            // Actualizar badge de conexión en el header
+            const statusText = document.getElementById('cloud-status-text');
+            if (statusText) {
+                statusText.textContent = supabaseClient ? 'Supabase Cloud' : 'Modo Local';
+            }
+
+            // Actualizar datos en header
+            document.getElementById('header-user-name').textContent = user.nombre;
+            document.getElementById('header-user-role').textContent = roleObj ? roleObj.nombre_rol : '';
+            document.getElementById('header-user-avatar').src = user.foto_perfil || createAvatarDataURI('AC', '#0A58CA', '#38BDF8');
+
+            // Control estricto de menú lateral según rol:
+            // Empleado (id_rol === 2) NO puede ver la opción Empleados
+            const navEmpleados = document.getElementById('nav-empleados');
+            if (user.id_rol === 1) {
+                navEmpleados.classList.remove('hidden');
+            } else {
+                navEmpleados.classList.add('hidden');
+                if (state.currentRoute === 'empleados') {
+                    state.currentRoute = 'menu';
+                }
+            }
+
+            // Inicializar formulario de venta limpia
+            resetSaleForm();
+            navigateTo(state.currentRoute);
+        }
+
+        function toggleMobileSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('sidebar-overlay');
+            sidebar.classList.toggle('-translate-x-full');
+            overlay.classList.toggle('hidden');
+        }
+
+        function handleGlobalSearch(val) {
+            state.searchQuery = val.trim().toLowerCase();
+            renderCurrentRoute();
+        }
+
+        function navigateTo(route) {
+            const user = getCurrentUser();
+            if (!user) return;
+
+            // Bloqueo de seguridad si un Empleado intenta entrar a 'empleados'
+            if (route === 'empleados' && user.id_rol !== 1) {
+                showToast('Acceso denegado: módulo exclusivo de Administrador.', 'error');
+                route = 'menu';
+            }
+
+            state.currentRoute = route;
+            state.searchQuery = '';
+            const searchInput = document.getElementById('global-search-input');
+            if (searchInput) searchInput.value = '';
+
+            // Actualizar botones activos del sidebar
+            document.querySelectorAll('.nav-btn').forEach(btn => {
+                if (btn.dataset.route === route) {
+                    btn.classList.add('sidebar-item-active');
+                } else {
+                    btn.classList.remove('sidebar-item-active');
+                }
+            });
+
+            // Cerrar sidebar en móvil si está abierto
+            const sidebar = document.getElementById('sidebar');
+            if (!sidebar.classList.contains('-translate-x-full') && window.innerWidth < 1024) {
+                toggleMobileSidebar();
+            }
+
+            const titles = {
+                'menu': 'Panel Principal',
+                'productos': 'Inventario de Productos',
+                'agregar-producto': 'Agregar Nuevo Producto',
+                'ventas': 'Gestión de Ventas y Servicios',
+                'categorias': 'Categorías de Insumos',
+                'empleados': 'Gestión de Empleados',
+                'ajustes': 'Perfil y Ajustes'
+            };
+            document.getElementById('header-page-title').textContent = titles[route] || 'Aqua Clean';
+
+            renderCurrentRoute();
+        }
+
+        function renderCurrentRoute() {
+            const container = document.getElementById('main-content');
+            switch (state.currentRoute) {
+                case 'menu':
+                    renderDashboardView(container);
+                    break;
+                case 'productos':
+                    renderProductosView(container);
+                    break;
+                case 'agregar-producto':
+                    renderAgregarProductoView(container);
+                    break;
+                case 'ventas':
+                    renderVentasView(container);
+                    break;
+                case 'categorias':
+                    renderCategoriasView(container);
+                    break;
+                case 'empleados':
+                    renderEmpleadosView(container);
+                    break;
+                case 'ajustes':
+                    renderAjustesView(container);
+                    break;
+                default:
+                    renderDashboardView(container);
+            }
+            lucide.createIcons();
+        }
+
+        // =========================================================================
+        // 7. VISTA 1: DASHBOARD / MENU (CAPTURA 2)
+        // =========================================================================
+        function renderDashboardView(container) {
+            const db = loadDB();
+            const admin = isAdmin();
+
+            const activeEmployees = db.usuarios.filter(u => u.estado === true).length;
+            const activeProducts = db.productos.filter(p => p.estado === true);
+            const totalSalesCount = db.ventas.length;
+            const totalCategoriesCount = db.categorias.length;
+
+            // Productos más convenientes (ordenados por menor precio o destacados)
+            const topProducts = [...activeProducts].sort((a, b) => a.precio - b.precio).slice(0, 3);
+
+            // Categorías con conteo real de productos activos
+            const categoriesSummary = db.categorias.map(cat => ({
+                ...cat,
+                count: activeProducts.filter(p => p.id_categoria === cat.id_categoria).length
+            }));
+
+            // Regla de Rol: Si es Empleado, ocultamos tarjeta "Total de Empleados"
+            const kpiGridCols = admin ? 'grid-cols-1 sm:grid-cols-2 xl:grid-cols-4' : 'grid-cols-1 sm:grid-cols-3';
+
+            container.innerHTML = `
+                <div class="space-y-6">
+                    <!-- Fila 1: Tarjetas KPI -->
+                    <div class="grid ${kpiGridCols} gap-5">
+                        ${admin ? `
+                        <div onclick="navigateTo('empleados')" class="bg-white rounded-card p-5 shadow-soft flex items-center justify-between cursor-pointer hover:shadow-md transition">
+                            <div>
+                                <p class="text-2xl sm:text-3xl font-extrabold text-[#0A58CA]">${activeEmployees}</p>
+                                <p class="text-xs sm:text-sm font-medium text-slate-600 mt-1">Total de<br>Empleados</p>
+                            </div>
+                            <div class="w-16 h-16 rounded-2xl bg-sky-50 flex items-center justify-center text-[#0A58CA]">
+                                <i data-lucide="users" class="w-8 h-8"></i>
+                            </div>
+                        </div>
+                        ` : ''}
+
+                        <div onclick="navigateTo('productos')" class="bg-white rounded-card p-5 shadow-soft flex items-center justify-between cursor-pointer hover:shadow-md transition">
+                            <div>
+                                <p class="text-2xl sm:text-3xl font-extrabold text-[#0A58CA]">${activeProducts.length}</p>
+                                <p class="text-xs sm:text-sm font-medium text-slate-600 mt-1">Productos<br>Activos</p>
+                            </div>
+                            <div class="w-16 h-16 rounded-2xl bg-amber-50 flex items-center justify-center text-amber-500">
+                                <i data-lucide="folder-open" class="w-8 h-8"></i>
+                            </div>
+                        </div>
+
+                        <div onclick="navigateTo('ventas')" class="bg-white rounded-card p-5 shadow-soft flex items-center justify-between cursor-pointer hover:shadow-md transition">
+                            <div>
+                                <p class="text-2xl sm:text-3xl font-extrabold text-[#0A58CA]">${totalSalesCount}</p>
+                                <p class="text-xs sm:text-sm font-medium text-slate-600 mt-1">Total de<br>ventas</p>
+                            </div>
+                            <div class="w-16 h-16 rounded-2xl bg-emerald-50 flex items-center justify-center text-emerald-600">
+                                <i data-lucide="receipt" class="w-8 h-8"></i>
+                            </div>
+                        </div>
+
+                        <div onclick="navigateTo('categorias')" class="bg-white rounded-card p-5 shadow-soft flex items-center justify-between cursor-pointer hover:shadow-md transition">
+                            <div>
+                                <p class="text-2xl sm:text-3xl font-extrabold text-[#0A58CA]">${totalCategoriesCount}</p>
+                                <p class="text-xs sm:text-sm font-medium text-slate-600 mt-1">Total de<br>categorías</p>
+                            </div>
+                            <div class="w-16 h-16 rounded-2xl bg-indigo-50 flex items-center justify-center text-indigo-600">
+                                <i data-lucide="layers" class="w-8 h-8"></i>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Fila 2: Gráfico Ventas Totales -->
+                    <div class="bg-white rounded-card p-6 shadow-soft">
+                        <div class="flex flex-wrap items-center justify-between gap-4 mb-4">
+                            <div class="flex items-center gap-6">
+                                <h2 class="text-base font-bold text-slate-800">Ventas totales</h2>
+                                <div class="flex items-center gap-4 text-xs font-medium">
+                                    <span class="flex items-center gap-1.5 text-slate-700">
+                                        <span class="w-2 h-2 rounded-full bg-slate-800"></span> Este año
+                                    </span>
+                                    <span class="flex items-center gap-1.5 text-sky-500">
+                                        <span class="w-2 h-2 rounded-full bg-sky-400"></span> Año pasado
+                                    </span>
+                                </div>
+                            </div>
+                            <span class="text-xs text-slate-400">Ingresos acumulados mensuales ($)</span>
+                        </div>
+                        <div class="h-60 w-full">
+                            <canvas id="sales-line-chart"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Fila 3: Productos más convenientes + Categorías de productos -->
+                    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                        <!-- Productos más convenientes -->
+                        <div class="lg:col-span-7 bg-white rounded-card p-6 shadow-soft">
+                            <h2 class="text-base font-bold text-slate-800 text-center mb-5">Productos más convenientes</h2>
+                            ${topProducts.length === 0 ? `
+                                <p class="text-sm text-slate-400 text-center py-8">No hay productos registrados.</p>
+                            ` : `
+                                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                                    ${topProducts.map(prod => `
+                                        <div onclick="navigateTo('productos')" class="border border-slate-100 rounded-2xl p-3.5 flex flex-col items-center text-center hover:border-blue-200 hover:shadow-sm transition cursor-pointer bg-slate-50/40">
+                                            <img src="${prod.imagen || DEFAULT_BOTTLE_IMG}" alt="${prod.nombre}" class="w-24 h-28 object-contain mb-3">
+                                            <p class="text-xs font-semibold text-slate-800 line-clamp-1">Producto: ${prod.marca || prod.nombre}</p>
+                                            <p class="text-xs text-slate-500 mt-0.5">Precio: ${formatMoney(prod.precio)} / ml</p>
+                                            <span class="mt-2 px-2.5 py-0.5 rounded-full bg-sky-100 text-blue-700 text-[10px] font-semibold">Stock: ${prod.stock} ml</span>
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            `}
+                        </div>
+
+                        <!-- Categorías de productos -->
+                        <div class="lg:col-span-5 bg-white rounded-card p-6 shadow-soft">
+                            <h2 class="text-base font-bold text-slate-800 mb-4">Categorías de productos</h2>
+                            <div class="space-y-3">
+                                ${categoriesSummary.map((cat, idx) => {
+                                    const catIcons = ['droplets', 'sparkles', 'shield'];
+                                    const iconName = catIcons[idx % catIcons.length];
+                                    return `
+                                    <div onclick="navigateTo('categorias')" class="flex items-center justify-between p-3.5 rounded-2xl border border-slate-100 hover:bg-sky-50/70 transition cursor-pointer">
+                                        <div class="flex items-center gap-3.5">
+                                            <div class="w-10 h-10 rounded-xl bg-blue-50 text-[#0A58CA] flex items-center justify-center shrink-0">
+                                                <i data-lucide="${iconName}" class="w-5 h-5"></i>
+                                            </div>
+                                            <span class="text-sm font-medium text-slate-700">${cat.nombre_categoria}</span>
+                                        </div>
+                                        <div class="flex items-center gap-2 text-xs text-slate-500">
+                                            <span>productos : <strong class="text-blue-600">${cat.count}</strong></span>
+                                            <i data-lucide="chevron-right" class="w-4 h-4 text-slate-400"></i>
+                                        </div>
+                                    </div>`;
+                                }).join('')}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            initDashboardChart(db);
+        }
+
+        function initDashboardChart(db) {
+            const ctx = document.getElementById('sales-line-chart');
+            if (!ctx) return;
+
+            if (state.salesChartInstance) {
+                state.salesChartInstance.destroy();
+            }
+
+            // Calcular total real de ventas actuales para enriquecer el mes vigente
+            let currentSalesTotal = 0;
+            db.ventas.forEach(v => {
+                const f = sp_ObtenerFacturaCalculada(db, v.id_ventas);
+                if (f) currentSalesTotal += f.total_factura;
+            });
+
+            const labels = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun'];
+            const thisYearData = [120, 185, 240, 210, 295, Math.max(310, Number(currentSalesTotal.toFixed(2)))];
+            const lastYearData = [95, 140, 175, 190, 220, 250];
+
+            state.salesChartInstance = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels,
+                    datasets: [
+                        {
+                            label: 'Este año',
+                            data: thisYearData,
+                            borderColor: '#1E293B',
+                            backgroundColor: 'rgba(14, 165, 233, 0.08)',
+                            borderWidth: 2,
+                            tension: 0.42,
+                            fill: true,
+                            pointRadius: 3,
+                            pointBackgroundColor: '#1E293B'
+                        },
+                        {
+                            label: 'Año pasado',
+                            data: lastYearData,
+                            borderColor: '#7DD3FC',
+                            borderDash: [5, 5],
+                            borderWidth: 2,
+                            tension: 0.42,
+                            fill: false,
+                            pointRadius: 2,
+                            pointBackgroundColor: '#7DD3FC'
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: (context) => `${context.dataset.label}: $${context.parsed.y.toFixed(2)}`
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: { display: false },
+                            ticks: { color: '#64748B', font: { size: 11 } }
+                        },
+                        y: {
+                            beginAtZero: true,
+                            grid: { color: '#F1F5F9' },
+                            ticks: {
+                                color: '#94A3B8',
+                                font: { size: 11 },
+                                callback: (val) => '$' + val
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // =========================================================================
+        // 8. VISTA 2: PRODUCTOS + MODAL EDITAR PRODUCTO (CAPTURAS 3 Y 4)
+        // =========================================================================
+        function renderProductosView(container) {
+            const db = loadDB();
+            const q = state.searchQuery;
+
+            const filteredProducts = db.productos.filter(p => {
+                if (!p.estado) return false;
+                if (!q) return true;
+                const cat = db.categorias.find(c => c.id_categoria === p.id_categoria);
+                const catName = cat ? cat.nombre_categoria.toLowerCase() : '';
+                return p.nombre.toLowerCase().includes(q) ||
+                       (p.marca && p.marca.toLowerCase().includes(q)) ||
+                       catName.includes(q);
+            });
+
+            container.innerHTML = `
+                <div class="space-y-5">
+                    <div class="flex flex-wrap items-center justify-between gap-3">
+                        <div>
+                            <h1 class="text-xl font-bold text-[#0F2942]">Productos en Inventario</h1>
+                            <p class="text-xs text-slate-600">Control de insumos líquidos por mililitro (ml) y precios unitarios.</p>
+                        </div>
+                        <button onclick="navigateTo('agregar-producto')" class="px-5 py-2.5 rounded-full btn-cobalt text-white text-xs sm:text-sm font-semibold shadow-pill flex items-center gap-2 cursor-pointer">
+                            <i data-lucide="plus" class="w-4 h-4"></i> Nuevo Producto
+                        </button>
+                    </div>
+
+                    ${filteredProducts.length === 0 ? `
+                        <div class="bg-white rounded-card p-12 text-center shadow-soft">
+                            <i data-lucide="package-search" class="w-12 h-12 text-blue-300 mx-auto mb-3"></i>
+                            <p class="text-base font-semibold text-slate-700">No se encontraron productos</p>
+                            <p class="text-xs text-slate-400 mt-1">Intenta con otro término o registra un nuevo insumo.</p>
+                        </div>
+                    ` : `
+                        <div class="space-y-4">
+                            ${filteredProducts.map(prod => {
+                                const cat = db.categorias.find(c => c.id_categoria === prod.id_categoria);
+                                return `
+                                <div class="bg-white rounded-card p-5 sm:p-6 shadow-soft flex flex-col md:flex-row items-center justify-between gap-6 hover:shadow-md transition">
+                                    <!-- Imagen y Nombre -->
+                                    <div class="flex flex-col items-center text-center w-full md:w-44 shrink-0">
+                                        <div class="w-28 h-28 rounded-2xl border border-sky-100 p-2 flex items-center justify-center bg-sky-50/30 mb-2">
+                                            <img src="${prod.imagen || DEFAULT_BOTTLE_IMG}" alt="${prod.nombre}" class="max-h-full max-w-full object-contain">
+                                        </div>
+                                        <span class="text-xs font-bold text-slate-800">${prod.nombre}</span>
+                                    </div>
+
+                                    <!-- Detalles Centrales -->
+                                    <div class="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-y-3 gap-x-6 w-full text-sm">
+                                        <div>
+                                            <span class="text-slate-500">Marca:</span>
+                                            <strong class="text-slate-800 ml-1">${prod.marca || 'Genérica'}</strong>
+                                        </div>
+                                        <div>
+                                            <span class="text-slate-500">Precio:</span>
+                                            <strong class="text-slate-800 ml-1">${formatMoney(prod.precio)} / ml</strong>
+                                        </div>
+                                        <div>
+                                            <span class="text-slate-500">Cantidad (Stock):</span>
+                                            <strong class="ml-1 ${prod.stock < 500 ? 'text-rose-600' : 'text-slate-800'}">${prod.stock} ml</strong>
+                                        </div>
+                                        <div>
+                                            <span class="text-slate-500">Fecha de compra:</span>
+                                            <strong class="text-slate-800 ml-1">${formatDate(prod.fecha_compra)}</strong>
+                                        </div>
+                                        <div class="sm:col-span-2">
+                                            <span class="text-slate-500">Categoría:</span>
+                                            <span class="ml-1 px-3 py-0.5 rounded-full bg-sky-100 text-blue-800 text-xs font-semibold">
+                                                ${cat ? cat.nombre_categoria : 'Sin categoría'}
+                                            </span>
+                                        </div>
+                                    </div>
+
+                                    <!-- Botones Editar / Eliminar -->
+                                    <div class="flex md:flex-col gap-3 w-full md:w-36 shrink-0">
+                                        <button onclick="openEditProductModal(${prod.id_producto})" class="flex-1 py-2.5 px-5 rounded-full btn-cobalt text-white text-xs font-semibold text-center cursor-pointer">
+                                            Editar
+                                        </button>
+                                        <button onclick="deleteProduct(${prod.id_producto})" class="flex-1 py-2.5 px-5 rounded-full btn-cobalt text-white text-xs font-semibold text-center cursor-pointer">
+                                            Eliminar
+                                        </button>
+                                    </div>
+                                </div>`;
+                            }).join('')}
+                        </div>
+                    `}
+                </div>
+            `;
+        }
+
+        function openEditProductModal(id_producto) {
+            const db = loadDB();
+            const prod = db.productos.find(p => p.id_producto === id_producto);
+            if (!prod) return;
+
+            document.getElementById('edit-prod-id').value = prod.id_producto;
+            document.getElementById('edit-prod-nombre').value = prod.nombre;
+            document.getElementById('edit-prod-marca').value = prod.marca || '';
+            document.getElementById('edit-prod-stock').value = prod.stock;
+            document.getElementById('edit-prod-precio').value = prod.precio;
+            document.getElementById('edit-prod-fecha').value = prod.fecha_compra || '';
+            document.getElementById('edit-prod-img-data').value = prod.imagen || DEFAULT_BOTTLE_IMG;
+            document.getElementById('edit-prod-preview').src = prod.imagen || DEFAULT_BOTTLE_IMG;
+
+            const catSelect = document.getElementById('edit-prod-categoria');
+            catSelect.innerHTML = db.categorias.map(c =>
+                `<option value="${c.id_categoria}" ${c.id_categoria === prod.id_categoria ? 'selected' : ''}>${c.nombre_categoria}</option>`
+            ).join('');
+
+            openModal('modal-edit-product');
+        }
+
+        async function saveEditedProduct(e) {
+            e.preventDefault();
+            const id = Number(document.getElementById('edit-prod-id').value);
+            const nombre = document.getElementById('edit-prod-nombre').value.trim();
+            const marca = document.getElementById('edit-prod-marca').value.trim();
+            const stock = Number(document.getElementById('edit-prod-stock').value);
+            const precio = Number(document.getElementById('edit-prod-precio').value);
+            const fecha_compra = document.getElementById('edit-prod-fecha').value || null;
+            const id_categoria = Number(document.getElementById('edit-prod-categoria').value);
+            const imagen = document.getElementById('edit-prod-img-data').value;
+
+            const db = loadDB();
+            const idx = db.productos.findIndex(p => p.id_producto === id);
+            if (idx === -1) return;
+
+            const oldPrice = Number(db.productos[idx].precio);
+
+            if (supabaseClient) {
+                const { error } = await supabaseClient
+                    .from('productos')
+                    .update({ nombre, marca, stock, precio, fecha_compra, id_categoria, imagen })
+                    .eq('id_producto', id);
+                if (error) {
+                    showToast('Error al actualizar en Supabase: ' + error.message, 'error');
+                    return;
+                }
+            }
+
+            // Trigger equivalente: trg_Auditoria_CambioPrecioProducto
+            if (oldPrice !== precio) {
+                await registrarBitacora(
+                    db,
+                    'productos',
+                    'UPDATE_PRECIO',
+                    `Producto ID: ${id} (${nombre}). Precio anterior: $${oldPrice.toFixed(2)} -> Precio nuevo: $${precio.toFixed(2)}`
+                );
+            }
+
+            if (supabaseClient) {
+                await syncFromSupabase(true);
+            } else {
+                db.productos[idx] = {
+                    ...db.productos[idx],
+                    nombre,
+                    marca,
+                    stock,
+                    precio,
+                    fecha_compra,
+                    id_categoria,
+                    imagen
+                };
+                saveDB(db);
+            }
+
+            closeModal('modal-edit-product');
+            showToast('Producto actualizado correctamente.', 'success');
+            renderCurrentRoute();
+        }
+
+        function deleteProduct(id_producto) {
+            const db = loadDB();
+            const prod = db.productos.find(p => p.id_producto === id_producto);
+            if (!prod) return;
+
+            openConfirmModal(
+                'Eliminar Producto',
+                `¿Deseas dar de baja "${prod.nombre}" del inventario activo?`,
+                async () => {
+                    const freshDb = loadDB();
+                    const target = freshDb.productos.find(p => p.id_producto === id_producto);
+                    if (target) {
+                        if (supabaseClient) {
+                            const { error } = await supabaseClient
+                                .from('productos')
+                                .update({ estado: false })
+                                .eq('id_producto', id_producto);
+                            if (error) {
+                                showToast('Error al eliminar en Supabase: ' + error.message, 'error');
+                                return;
+                            }
+                        }
+
+                        target.estado = false; // Soft delete
+                        await registrarBitacora(freshDb, 'productos', 'SOFT_DELETE', `Se desactivó el producto ID: ${target.id_producto} (${target.nombre})`);
+
+                        if (supabaseClient) {
+                            await syncFromSupabase(true);
+                        } else {
+                            saveDB(freshDb);
+                        }
+                        showToast('Producto eliminado del catálogo activo.', 'info');
+                        renderCurrentRoute();
+                    }
+                }
+            );
+        }
+
+        // =========================================================================
+        // 9. VISTA 3: AGREGAR PRODUCTOS
+        // =========================================================================
+        function renderAgregarProductoView(container) {
+            const db = loadDB();
+            const today = new Date().toISOString().split('T')[0];
+
+            container.innerHTML = `
+                <div class="max-w-3xl mx-auto">
+                    <div class="bg-white rounded-card p-6 sm:p-8 shadow-soft">
+                        <div class="flex items-center gap-3 mb-6">
+                            <div class="w-11 h-11 rounded-2xl bg-blue-50 text-[#0A58CA] flex items-center justify-center">
+                                <i data-lucide="package-plus" class="w-6 h-6"></i>
+                            </div>
+                            <div>
+                                <h1 class="text-xl font-bold text-[#0F2942]">Registrar Nuevo Producto</h1>
+                                <p class="text-xs text-slate-500">Agrega detergentes, suavizantes o insumos líquidos al inventario.</p>
+                            </div>
+                        </div>
+
+                        <form onsubmit="createNewProduct(event)" class="grid grid-cols-1 md:grid-cols-12 gap-6">
+                            <!-- Subida de imagen -->
+                            <div class="md:col-span-4 flex flex-col items-center justify-center bg-sky-50/60 rounded-2xl p-5 border border-dashed border-blue-200">
+                                <img id="new-prod-preview" src="${DEFAULT_BOTTLE_IMG}" alt="Vista previa" class="w-32 h-36 object-contain mb-3">
+                                <input type="hidden" id="new-prod-img-data" value="${DEFAULT_BOTTLE_IMG}">
+                                <label class="px-4 py-2 rounded-full btn-cobalt text-white text-xs font-semibold cursor-pointer">
+                                    Subir imagen
+                                    <input type="file" accept="image/*" class="hidden" onchange="handleImageUpload(event, 'new-prod-preview', 'new-prod-img-data')">
+                                </label>
+                                <span class="text-[11px] text-slate-400 mt-2 text-center">PNG, JPG o SVG</span>
+                            </div>
+
+                            <!-- Campos -->
+                            <div class="md:col-span-8 space-y-4">
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                    <div>
+                                        <label class="block text-xs font-semibold text-slate-700 mb-1">Nombre del producto *</label>
+                                        <input type="text" id="new-prod-nombre" required placeholder="Ej. Detergente Líquido Azul"
+                                            class="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs font-semibold text-slate-700 mb-1">Marca</label>
+                                        <input type="text" id="new-prod-marca" placeholder="Ej. Tide / Xedex"
+                                            class="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                    </div>
+                                </div>
+
+                                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                                    <div>
+                                        <label class="block text-xs font-semibold text-slate-700 mb-1">Precio por ml ($) *</label>
+                                        <input type="number" id="new-prod-precio" step="0.01" min="0" required placeholder="0.05"
+                                            class="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs font-semibold text-slate-700 mb-1">Stock inicial (ml) *</label>
+                                        <input type="number" id="new-prod-stock" min="1" required placeholder="5000"
+                                            class="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs font-semibold text-slate-700 mb-1">Fecha de compra</label>
+                                        <input type="date" id="new-prod-fecha" value="${today}"
+                                            class="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-700 mb-1">Categoría *</label>
+                                    <select id="new-prod-categoria" required class="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                        ${db.categorias.map(c => `<option value="${c.id_categoria}">${c.nombre_categoria}</option>`).join('')}
+                                    </select>
+                                </div>
+
+                                <div class="pt-3 flex justify-end gap-3">
+                                    <button type="button" onclick="navigateTo('productos')" class="px-5 py-2.5 rounded-full bg-slate-100 text-slate-600 text-sm font-semibold hover:bg-slate-200 cursor-pointer">
+                                        Cancelar
+                                    </button>
+                                    <button type="submit" class="px-7 py-2.5 rounded-full btn-cobalt text-white text-sm font-semibold shadow-pill cursor-pointer">
+                                        Guardar Producto
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            `;
+        }
+
+        async function createNewProduct(e) {
+            e.preventDefault();
+            const db = loadDB();
+
+            const payload = {
+                nombre: document.getElementById('new-prod-nombre').value.trim(),
+                marca: document.getElementById('new-prod-marca').value.trim() || 'Genérica',
+                precio: Number(document.getElementById('new-prod-precio').value),
+                fecha_compra: document.getElementById('new-prod-fecha').value || null,
+                id_categoria: Number(document.getElementById('new-prod-categoria').value),
+                imagen: document.getElementById('new-prod-img-data').value || DEFAULT_BOTTLE_IMG,
+                stock: Number(document.getElementById('new-prod-stock').value),
+                estado: true
+            };
+
+            if (supabaseClient) {
+                const { error } = await supabaseClient.from('productos').insert([payload]);
+                if (error) {
+                    showToast('Error al guardar producto en Supabase: ' + error.message, 'error');
+                    return;
+                }
+                await syncFromSupabase(true);
+            } else {
+                const nextId = db.productos.length > 0 ? Math.max(...db.productos.map(p => p.id_producto)) + 1 : 1;
+                db.productos.push({ id_producto: nextId, ...payload });
+                saveDB(db);
+            }
+
+            showToast(`Producto "${payload.nombre}" registrado exitosamente.`, 'success');
+            navigateTo('productos');
+        }
+
+        // =========================================================================
+        // 10. VISTA 4: VENTAS Y SERVICIOS (CAPTURA 5 + REGLAS DE ROL ESTRICTAS)
+        // =========================================================================
+        function resetSaleForm() {
+            const db = loadDB();
+            const firstSrv = db.servicios_lavados.find(s => s.estado);
+            state.saleForm = {
+                editingId: null,
+                cliente: '',
+                servicios: firstSrv ? [{
+                    id_servicio: firstSrv.id_servicio,
+                    cantidad: 1,
+                    peso_lb: 15,
+                    precio_unitario_historico: firstSrv.precio_lavado
+                }] : [],
+                productos: []
+            };
+        }
+
+        function renderVentasView(container) {
+            const db = loadDB();
+            const admin = isAdmin();
+            const q = state.searchQuery;
+
+            // Si un Empleado tiene editingId por alguna razón, forzar reset a Nueva Venta
+            if (!admin && state.saleForm.editingId !== null) {
+                resetSaleForm();
+            }
+
+            const ventasList = [...db.ventas]
+                .sort((a, b) => b.id_ventas - a.id_ventas)
+                .map(v => sp_ObtenerFacturaCalculada(db, v.id_ventas))
+                .filter(f => {
+                    if (!f) return false;
+                    if (!q) return true;
+                    const srvText = f.servicios.map(s => s.nombre_servicio.toLowerCase()).join(' ');
+                    const prodText = f.productos.map(p => p.nombre_producto.toLowerCase()).join(' ');
+                    return f.cliente.toLowerCase().includes(q) ||
+                           srvText.includes(q) ||
+                           prodText.includes(q) ||
+                           String(f.id_ventas).includes(q);
+                });
+
+            // Calcular totales en tiempo real del formulario lateral derecho
+            const subtotalServiciosForm = state.saleForm.servicios.reduce(
+                (acc, item) => acc + (Number(item.cantidad || 0) * Number(item.precio_unitario_historico || 0)), 0
+            );
+            const subtotalProductosForm = state.saleForm.productos.reduce(
+                (acc, item) => acc + (Number(item.cantidad_ml || 0) * Number(item.precio_unitario_historico || 0)), 0
+            );
+            const totalForm = subtotalServiciosForm + subtotalProductosForm;
+
+            const activeServices = db.servicios_lavados.filter(s => s.estado);
+            const activeProducts = db.productos.filter(p => p.estado);
+
+            container.innerHTML = `
+                <div class="grid grid-cols-1 xl:grid-cols-12 gap-6 items-start">
+                    <!-- COLUMNA IZQUIERDA: LISTA DE VENTAS -->
+                    <div class="xl:col-span-7 space-y-4">
+                        <div class="flex flex-wrap items-center justify-between gap-2">
+                            <div>
+                                <h1 class="text-xl font-bold text-[#0F2942]">Historial de Ventas</h1>
+                                <p class="text-xs text-slate-600">Facturación detallada por servicios de lavado y consumo de insumos.</p>
+                            </div>
+                            <button onclick="openServicesCatalogModal()" class="px-4 py-2 rounded-full bg-white text-[#0A58CA] border border-blue-200 hover:bg-blue-50 text-xs font-semibold flex items-center gap-1.5 shadow-2xs cursor-pointer">
+                                <i data-lucide="washing-machine" class="w-4 h-4"></i> Servicios de Lavado
+                            </button>
+                        </div>
+
+                        ${ventasList.length === 0 ? `
+                            <div class="bg-white rounded-card p-10 text-center shadow-soft">
+                                <p class="text-sm font-semibold text-slate-600">No hay ventas registradas que coincidan.</p>
+                            </div>
+                        ` : ventasList.map(venta => `
+                            <div class="bg-white rounded-card p-5 sm:p-6 shadow-soft hover:shadow-md transition border ${state.saleForm.editingId === venta.id_ventas ? 'border-blue-500 ring-2 ring-blue-200' : 'border-transparent'}">
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm mb-3">
+                                    <div>
+                                        <span class="text-slate-500">Cliente:</span>
+                                        <strong class="text-slate-800 ml-1">${venta.cliente}</strong>
+                                        <span class="ml-2 text-[11px] px-2 py-0.5 rounded-full bg-slate-100 text-slate-500">#${venta.id_ventas}</span>
+                                    </div>
+                                    <div>
+                                        <span class="text-slate-500">Fecha de venta:</span>
+                                        <strong class="text-slate-800 ml-1">${formatDate(venta.fecha_venta)}</strong>
+                                    </div>
+                                    <div>
+                                        <span class="text-slate-500">Total:</span>
+                                        <strong class="text-[#0A58CA] text-base ml-1">${formatMoney(venta.total_factura)}</strong>
+                                    </div>
+                                    <div>
+                                        <span class="text-slate-500">Tipo de lavado:</span>
+                                        <strong class="text-slate-800 ml-1">${venta.servicios.map(s => `${s.nombre_servicio} (x${s.cantidad}${s.peso_lb ? ` - ${s.peso_lb}lb` : ''})`).join(', ') || 'Ninguno'}</strong>
+                                    </div>
+                                </div>
+
+                                <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-4 pt-2 border-t border-slate-100">
+                                    <div class="flex-1 space-y-1.5">
+                                        <p class="text-xs font-semibold text-slate-700">Productos adicionales:</p>
+                                        ${venta.productos.length === 0 ? `
+                                            <div class="px-3.5 py-2 rounded-xl bg-[#EAF6FC] text-xs text-slate-500">
+                                                Sin productos adicionales
+                                            </div>
+                                        ` : venta.productos.map(p => `
+                                            <div class="px-3.5 py-2 rounded-xl bg-[#EAF6FC] text-xs text-slate-700 flex flex-wrap justify-between gap-2">
+                                                <span><strong>${p.nombre_producto}</strong> - Cantidad ${p.cantidad_ml}ml</span>
+                                                <span class="font-semibold text-blue-800">Subtotal: ${formatMoney(p.subtotal_producto)}</span>
+                                            </div>
+                                        `).join('')}
+                                    </div>
+
+                                    <!-- Botones de Acción: Editar SOLO VISIBLE PARA ADMINISTRADOR -->
+                                    <div class="flex sm:flex-col gap-2 shrink-0">
+                                        <button onclick="viewInvoiceModal(${venta.id_ventas})" class="px-5 py-2 rounded-full bg-sky-100 hover:bg-sky-200 text-[#0A58CA] text-xs font-semibold transition cursor-pointer">
+                                            Ver Factura
+                                        </button>
+                                        ${admin ? `
+                                            <button onclick="startEditSale(${venta.id_ventas})" class="px-6 py-2 rounded-full btn-cobalt text-white text-xs font-semibold transition cursor-pointer">
+                                                Editar
+                                            </button>
+                                        ` : ''}
+                                    </div>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+
+                    <!-- COLUMNA DERECHA: PANEL NUEVA VENTA / EDITAR VENTA -->
+                    <div class="xl:col-span-5 bg-white rounded-card p-6 shadow-soft sticky top-24">
+                        <div class="flex items-center justify-between mb-4">
+                            <h2 class="text-2xl font-bold text-[#0F2942] mx-auto">
+                                ${state.saleForm.editingId && admin ? `Editar Venta #${state.saleForm.editingId}` : 'Nueva Venta'}
+                            </h2>
+                            ${state.saleForm.editingId && admin ? `
+                                <button type="button" onclick="cancelEditSale()" class="text-xs text-rose-600 hover:underline font-semibold cursor-pointer">
+                                    Cancelar
+                                </button>
+                            ` : ''}
+                        </div>
+
+                        <form onsubmit="submitSaleForm(event)" class="space-y-4">
+                            <!-- Cliente -->
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">Cliente *</label>
+                                <input type="text" required value="${state.saleForm.cliente}"
+                                    oninput="state.saleForm.cliente = this.value"
+                                    placeholder="Nombre completo del cliente"
+                                    class="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-sm focus:outline-none focus:border-blue-600">
+                            </div>
+
+                            <!-- Sección Servicios -->
+                            <div class="pt-1">
+                                <div class="flex items-center justify-between mb-2">
+                                    <h3 class="text-base font-bold text-slate-800">Servicio</h3>
+                                    <button type="button" onclick="addSaleServiceRow()" class="text-xs font-semibold text-blue-600 hover:underline flex items-center gap-1 cursor-pointer">
+                                        <i data-lucide="plus-circle" class="w-3.5 h-3.5"></i> Añadir servicio
+                                    </button>
+                                </div>
+
+                                <div class="space-y-2.5">
+                                    ${state.saleForm.servicios.map((srvItem, idx) => `
+                                        <div class="p-3 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-2">
+                                            <div class="flex items-center justify-between gap-2">
+                                                <select onchange="updateSaleServiceRow(${idx}, 'id_servicio', this.value)"
+                                                    class="flex-1 px-3 py-2 rounded-xl border border-slate-300 bg-white text-xs font-medium">
+                                                    ${activeServices.map(s => `
+                                                        <option value="${s.id_servicio}" ${s.id_servicio === srvItem.id_servicio ? 'selected' : ''}>
+                                                            ${s.nombre_servicio} (${formatMoney(s.precio_lavado)})
+                                                        </option>
+                                                    `).join('')}
+                                                </select>
+                                                ${state.saleForm.servicios.length > 1 ? `
+                                                    <button type="button" onclick="removeSaleServiceRow(${idx})" class="text-rose-500 hover:text-rose-700 p-1">
+                                                        <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                                    </button>
+                                                ` : ''}
+                                            </div>
+                                            <div class="grid grid-cols-3 gap-2">
+                                                <div>
+                                                    <label class="block text-[10px] font-semibold text-slate-500">Cantidad</label>
+                                                    <input type="number" min="1" value="${srvItem.cantidad}"
+                                                        onchange="updateSaleServiceRow(${idx}, 'cantidad', this.value)"
+                                                        class="w-full px-2.5 py-1.5 rounded-lg border border-slate-300 bg-white text-xs">
+                                                </div>
+                                                <div>
+                                                    <label class="block text-[10px] font-semibold text-slate-500">Peso (lb) opc.</label>
+                                                    <input type="number" step="0.5" min="0" value="${srvItem.peso_lb ?? ''}" placeholder="Ej. 15"
+                                                        onchange="updateSaleServiceRow(${idx}, 'peso_lb', this.value)"
+                                                        class="w-full px-2.5 py-1.5 rounded-lg border border-slate-300 bg-white text-xs">
+                                                </div>
+                                                <div>
+                                                    <label class="block text-[10px] font-semibold text-slate-500">Precio Unit.</label>
+                                                    <input type="number" step="0.01" min="0" value="${srvItem.precio_unitario_historico}"
+                                                        onchange="updateSaleServiceRow(${idx}, 'precio_unitario_historico', this.value)"
+                                                        class="w-full px-2.5 py-1.5 rounded-lg border border-slate-300 bg-white text-xs">
+                                                </div>
+                                            </div>
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            </div>
+
+                            <!-- Sección Productos Adicionales -->
+                            <div class="pt-1">
+                                <div class="flex items-center justify-between mb-2">
+                                    <h3 class="text-base font-bold text-slate-800">Productos Adicionales</h3>
+                                    <button type="button" onclick="addSaleProductRow()" class="px-3.5 py-1.5 rounded-full btn-cobalt text-white text-xs font-semibold flex items-center gap-1 cursor-pointer">
+                                        <i data-lucide="plus" class="w-3.5 h-3.5"></i> Agregar producto
+                                    </button>
+                                </div>
+
+                                ${state.saleForm.productos.length === 0 ? `
+                                    <p class="text-xs text-slate-400 italic bg-sky-50/50 p-3 rounded-xl text-center">
+                                        No se han agregado detergentes o suavizantes extra.
+                                    </p>
+                                ` : `
+                                    <div class="space-y-2.5">
+                                        ${state.saleForm.productos.map((prodItem, idx) => {
+                                            const prodObj = db.productos.find(p => p.id_producto === prodItem.id_producto);
+                                            return `
+                                            <div class="p-3 rounded-2xl bg-sky-50/60 border border-sky-100 space-y-2">
+                                                <div class="flex items-center justify-between gap-2">
+                                                    <select onchange="updateSaleProductRow(${idx}, 'id_producto', this.value)"
+                                                        class="flex-1 px-3 py-2 rounded-xl border border-slate-300 bg-white text-xs font-medium">
+                                                        ${activeProducts.map(p => `
+                                                            <option value="${p.id_producto}" ${p.id_producto === prodItem.id_producto ? 'selected' : ''}>
+                                                                ${p.nombre} (Disp: ${p.stock}ml)
+                                                            </option>
+                                                        `).join('')}
+                                                    </select>
+                                                    <button type="button" onclick="removeSaleProductRow(${idx})" class="text-rose-500 hover:text-rose-700 p-1">
+                                                        <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                                    </button>
+                                                </div>
+                                                <div class="grid grid-cols-2 gap-2">
+                                                    <div>
+                                                        <label class="block text-[10px] font-semibold text-slate-500">Cantidad (ml) ${prodObj ? `[Max ${prodObj.stock}]` : ''}</label>
+                                                        <input type="number" min="1" value="${prodItem.cantidad_ml}"
+                                                            onchange="updateSaleProductRow(${idx}, 'cantidad_ml', this.value)"
+                                                            class="w-full px-2.5 py-1.5 rounded-lg border border-slate-300 bg-white text-xs">
+                                                    </div>
+                                                    <div>
+                                                        <label class="block text-[10px] font-semibold text-slate-500">Precio ($/ml)</label>
+                                                        <input type="text" readonly value="${formatMoney(prodItem.precio_unitario_historico)}"
+                                                            class="w-full px-2.5 py-1.5 rounded-lg border border-slate-200 bg-slate-100 text-xs text-slate-600">
+                                                    </div>
+                                                </div>
+                                            </div>`;
+                                        }).join('')}
+                                    </div>
+                                `}
+                            </div>
+
+                            <!-- Resumen de Totales -->
+                            <div class="pt-3 border-t border-slate-200 space-y-1.5 text-sm">
+                                <div class="flex justify-between text-slate-600">
+                                    <span>Lavados</span>
+                                    <span class="font-medium">${formatMoney(subtotalServiciosForm)}</span>
+                                </div>
+                                <div class="flex justify-between text-slate-600">
+                                    <span>Productos</span>
+                                    <span class="font-medium">${formatMoney(subtotalProductosForm)}</span>
+                                </div>
+                                <div class="flex justify-between text-base font-bold text-slate-900 pt-1">
+                                    <span>Total</span>
+                                    <span class="text-[#0A58CA]">${formatMoney(totalForm)}</span>
+                                </div>
+                            </div>
+
+                            <div class="pt-2 flex justify-center">
+                                <button type="submit" class="w-full py-3 px-6 rounded-full btn-cobalt text-white font-semibold text-sm shadow-pill cursor-pointer">
+                                    ${state.saleForm.editingId && admin ? 'Actualizar Venta' : 'Registrar Venta'}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            `;
+        }
+
+        function addSaleServiceRow() {
+            const db = loadDB();
+            const activeServices = db.servicios_lavados.filter(s => s.estado);
+            if (activeServices.length === 0) {
+                showToast('No hay servicios activos disponibles.', 'error');
+                return;
+            }
+            const srv = activeServices[0];
+            state.saleForm.servicios.push({
+                id_servicio: srv.id_servicio,
+                cantidad: 1,
+                peso_lb: null,
+                precio_unitario_historico: srv.precio_lavado
+            });
+            renderCurrentRoute();
+        }
+
+        function removeSaleServiceRow(idx) {
+            state.saleForm.servicios.splice(idx, 1);
+            renderCurrentRoute();
+        }
+
+        function updateSaleServiceRow(idx, field, val) {
+            const db = loadDB();
+            const row = state.saleForm.servicios[idx];
+            if (!row) return;
+
+            if (field === 'id_servicio') {
+                const srv = db.servicios_lavados.find(s => s.id_servicio === Number(val));
+                row.id_servicio = Number(val);
+                if (srv) row.precio_unitario_historico = srv.precio_lavado;
+            } else if (field === 'cantidad') {
+                row.cantidad = Math.max(1, Number(val));
+            } else if (field === 'peso_lb') {
+                row.peso_lb = val === '' ? null : Number(val);
+            } else if (field === 'precio_unitario_historico') {
+                row.precio_unitario_historico = Math.max(0, Number(val));
+            }
+            renderCurrentRoute();
+        }
+
+        function addSaleProductRow() {
+            const db = loadDB();
+            const activeProducts = db.productos.filter(p => p.estado && p.stock > 0);
+            if (activeProducts.length === 0) {
+                showToast('No hay productos con stock disponible.', 'error');
+                return;
+            }
+            const prod = activeProducts[0];
+            state.saleForm.productos.push({
+                id_producto: prod.id_producto,
+                cantidad_ml: Math.min(50, prod.stock),
+                precio_unitario_historico: prod.precio
+            });
+            renderCurrentRoute();
+        }
+
+        function removeSaleProductRow(idx) {
+            state.saleForm.productos.splice(idx, 1);
+            renderCurrentRoute();
+        }
+
+        function updateSaleProductRow(idx, field, val) {
+            const db = loadDB();
+            const row = state.saleForm.productos[idx];
+            if (!row) return;
+
+            if (field === 'id_producto') {
+                const prod = db.productos.find(p => p.id_producto === Number(val));
+                row.id_producto = Number(val);
+                if (prod) row.precio_unitario_historico = prod.precio;
+            } else if (field === 'cantidad_ml') {
+                row.cantidad_ml = Math.max(1, Number(val));
+            }
+            renderCurrentRoute();
+        }
+
+        // Cargar venta en el formulario derecho (EXCLUSIVO ADMINISTRADOR)
+        function startEditSale(id_venta) {
+            if (!isAdmin()) {
+                showToast('Solo el Administrador puede editar ventas.', 'error');
+                return;
+            }
+            const db = loadDB();
+            const venta = db.ventas.find(v => v.id_ventas === id_venta);
+            if (!venta) return;
+
+            const srvs = db.detalle_venta_servicio
+                .filter(d => d.id_venta === id_venta)
+                .map(d => ({
+                    id_servicio: d.id_servicio,
+                    cantidad: d.cantidad,
+                    peso_lb: d.peso_lb,
+                    precio_unitario_historico: d.precio_unitario_historico
+                }));
+
+            const prods = db.detalle_venta_product
+                .filter(d => d.id_venta === id_venta)
+                .map(d => ({
+                    id_producto: d.id_producto,
+                    cantidad_ml: d.cantidad_ml,
+                    precio_unitario_historico: d.precio_unitario_historico
+                }));
+
+            state.saleForm = {
+                editingId: id_venta,
+                cliente: venta.cliente,
+                servicios: srvs,
+                productos: prods
+            };
+            renderCurrentRoute();
+            showToast(`Editando venta #${id_venta} de ${venta.cliente}`, 'info');
+        }
+
+        function cancelEditSale() {
+            resetSaleForm();
+            renderCurrentRoute();
+        }
+
+        // Guardar Nueva Venta o Actualizar Venta (equivalente a sp_RegistrarVentaCompleta + sp_AgregarProductoAVenta)
+        async function submitSaleForm(e) {
+            e.preventDefault();
+            const user = getCurrentUser();
+            if (!user) return;
+
+            const cliente = state.saleForm.cliente.trim();
+            if (!cliente) {
+                showToast('Ingresa el nombre del cliente.', 'error');
+                return;
+            }
+            if (state.saleForm.servicios.length === 0 && state.saleForm.productos.length === 0) {
+                showToast('Debes incluir al menos un servicio o producto.', 'error');
+                return;
+            }
+
+            const db = loadDB();
+            const editingId = isAdmin() ? state.saleForm.editingId : null;
+
+            // Agrupar productos por id_producto (PK Compuesta id_venta, id_producto)
+            const groupedProducts = {};
+            for (const item of state.saleForm.productos) {
+                const pid = Number(item.id_producto);
+                if (!groupedProducts[pid]) {
+                    groupedProducts[pid] = {
+                        id_producto: pid,
+                        cantidad_ml: 0,
+                        precio_unitario_historico: Number(item.precio_unitario_historico)
+                    };
+                }
+                groupedProducts[pid].cantidad_ml += Number(item.cantidad_ml);
+            }
+
+            // Mapa de stock previo restaurado si estamos editando
+            const restoredStockMap = {};
+            db.productos.forEach(p => { restoredStockMap[p.id_producto] = Number(p.stock); });
+
+            if (editingId !== null) {
+                const oldProds = db.detalle_venta_product.filter(d => d.id_venta === editingId);
+                for (const op of oldProds) {
+                    if (restoredStockMap[op.id_producto] !== undefined) {
+                        restoredStockMap[op.id_producto] += Number(op.cantidad_ml);
+                    }
+                }
+            }
+
+            // Validar stock suficiente antes de confirmar (chk_stock_producto)
+            for (const pidStr in groupedProducts) {
+                const reqProd = groupedProducts[pidStr];
+                const dbProd = db.productos.find(p => p.id_producto === reqProd.id_producto && p.estado === true);
+                if (!dbProd) {
+                    showToast('Uno de los productos seleccionados no está disponible.', 'error');
+                    return;
+                }
+                const availableStock = restoredStockMap[reqProd.id_producto] ?? 0;
+                if (availableStock < reqProd.cantidad_ml) {
+                    showToast(`Stock insuficiente para "${dbProd.nombre}". Disponible: ${availableStock} ml.`, 'error');
+                    return;
+                }
+            }
+
+            // Agrupar servicios por id_servicio (PK Compuesta id_venta, id_servicio)
+            const groupedServices = {};
+            for (const item of state.saleForm.servicios) {
+                const sid = Number(item.id_servicio);
+                if (!groupedServices[sid]) {
+                    groupedServices[sid] = {
+                        id_servicio: sid,
+                        cantidad: 0,
+                        peso_lb: item.peso_lb,
+                        precio_unitario_historico: Number(item.precio_unitario_historico)
+                    };
+                }
+                groupedServices[sid].cantidad += Number(item.cantidad);
+                if (item.peso_lb) groupedServices[sid].peso_lb = Number(item.peso_lb);
+            }
+
+            let targetVentaId;
+
+            if (supabaseClient) {
+                try {
+                    if (editingId !== null) {
+                        // 1. Actualizar encabezado en Supabase
+                        const { error: upErr } = await supabaseClient
+                            .from('ventas')
+                            .update({ cliente })
+                            .eq('id_ventas', editingId);
+                        if (upErr) throw upErr;
+                        targetVentaId = editingId;
+
+                        // 2. Eliminar detalles anteriores
+                        await supabaseClient.from('detalle_venta_servicio').delete().eq('id_venta', editingId);
+                        await supabaseClient.from('detalle_venta_product').delete().eq('id_venta', editingId);
+
+                        // 3. Restaurar stock previo en tabla productos antes de descontar nuevo consumo
+                        const oldProds = db.detalle_venta_product.filter(d => d.id_venta === editingId);
+                        for (const op of oldProds) {
+                            await supabaseClient
+                                .from('productos')
+                                .update({ stock: restoredStockMap[op.id_producto] })
+                                .eq('id_producto', op.id_producto);
+                        }
+                    } else {
+                        // 1. Insertar encabezado en Supabase
+                        const { data: insertedVenta, error: insErr } = await supabaseClient
+                            .from('ventas')
+                            .insert([{ cliente, id_usuario: user.id_usuario }])
+                            .select()
+                            .single();
+                        if (insErr) throw insErr;
+                        targetVentaId = insertedVenta.id_ventas;
+                    }
+
+                    // 2. Insertar detalles de servicios
+                    const serviceRows = Object.values(groupedServices).map(s => ({
+                        id_venta: targetVentaId,
+                        id_servicio: s.id_servicio,
+                        cantidad: s.cantidad,
+                        peso_lb: s.peso_lb,
+                        precio_unitario_historico: s.precio_unitario_historico,
+                        subtotal_servicio: Number((s.cantidad * s.precio_unitario_historico).toFixed(2))
+                    }));
+                    if (serviceRows.length > 0) {
+                        const { error: srvErr } = await supabaseClient.from('detalle_venta_servicio').insert(serviceRows);
+                        if (srvErr) throw srvErr;
+                    }
+
+                    // 3. Insertar detalles de productos y descontar stock
+                    const productRows = Object.values(groupedProducts).map(p => ({
+                        id_venta: targetVentaId,
+                        id_producto: p.id_producto,
+                        cantidad_ml: p.cantidad_ml,
+                        precio_unitario_historico: p.precio_unitario_historico,
+                        subtotal_producto: Number((p.cantidad_ml * p.precio_unitario_historico).toFixed(2))
+                    }));
+                    if (productRows.length > 0) {
+                        const { error: prodErr } = await supabaseClient.from('detalle_venta_product').insert(productRows);
+                        if (prodErr) throw prodErr;
+
+                        for (const p of Object.values(groupedProducts)) {
+                            const finalStock = restoredStockMap[p.id_producto] - p.cantidad_ml;
+                            const { error: stkErr } = await supabaseClient
+                                .from('productos')
+                                .update({ stock: finalStock })
+                                .eq('id_producto', p.id_producto);
+                            if (stkErr) throw stkErr;
+                        }
+                    }
+
+                    await registrarBitacora(
+                        db,
+                        'ventas',
+                        editingId !== null ? 'UPDATE_VENTA' : 'INSERT_VENTA',
+                        `${editingId !== null ? 'Actualizada' : 'Registrada'} venta #${targetVentaId} para cliente "${cliente}"`
+                    );
+
+                    await syncFromSupabase(true);
+                } catch (err) {
+                    console.error(err);
+                    showToast('Error al procesar venta en Supabase: ' + (err.message || err), 'error');
+                    return;
+                }
+            } else {
+                // MODO LOCAL FALLBACK
+                if (editingId !== null) {
+                    const vIdx = db.ventas.findIndex(v => v.id_ventas === editingId);
+                    if (vIdx === -1) return;
+                    db.ventas[vIdx].cliente = cliente;
+                    targetVentaId = editingId;
+
+                    const oldProds = db.detalle_venta_product.filter(d => d.id_venta === editingId);
+                    for (const op of oldProds) {
+                        const prodRef = db.productos.find(p => p.id_producto === op.id_producto);
+                        if (prodRef) prodRef.stock += Number(op.cantidad_ml);
+                    }
+
+                    db.detalle_venta_servicio = db.detalle_venta_servicio.filter(d => d.id_venta !== editingId);
+                    db.detalle_venta_product = db.detalle_venta_product.filter(d => d.id_venta !== editingId);
+                } else {
+                    targetVentaId = db.ventas.length > 0 ? Math.max(...db.ventas.map(v => v.id_ventas)) + 1 : 1;
+                    db.ventas.push({
+                        id_ventas: targetVentaId,
+                        cliente: cliente,
+                        fecha_venta: new Date().toISOString(),
+                        id_usuario: user.id_usuario
+                    });
+                }
+
+                for (const sidStr in groupedServices) {
+                    const s = groupedServices[sidStr];
+                    const subtotal = Number((s.cantidad * s.precio_unitario_historico).toFixed(2));
+                    db.detalle_venta_servicio.push({
+                        id_venta: targetVentaId,
+                        id_servicio: s.id_servicio,
+                        cantidad: s.cantidad,
+                        peso_lb: s.peso_lb,
+                        precio_unitario_historico: s.precio_unitario_historico,
+                        subtotal_servicio: subtotal
+                    });
+                }
+
+                for (const pidStr in groupedProducts) {
+                    const p = groupedProducts[pidStr];
+                    const dbProd = db.productos.find(item => item.id_producto === p.id_producto);
+                    const subtotal = Number((p.cantidad_ml * p.precio_unitario_historico).toFixed(2));
+
+                    db.detalle_venta_product.push({
+                        id_venta: targetVentaId,
+                        id_producto: p.id_producto,
+                        cantidad_ml: p.cantidad_ml,
+                        precio_unitario_historico: p.precio_unitario_historico,
+                        subtotal_producto: subtotal
+                    });
+
+                    dbProd.stock -= p.cantidad_ml;
+                }
+
+                await registrarBitacora(
+                    db,
+                    'ventas',
+                    editingId !== null ? 'UPDATE_VENTA' : 'INSERT_VENTA',
+                    `${editingId !== null ? 'Actualizada' : 'Registrada'} venta #${targetVentaId} para cliente "${cliente}"`
+                );
+                saveDB(db);
+            }
+
+            resetSaleForm();
+            showToast(editingId !== null ? `Venta #${targetVentaId} actualizada.` : `Venta #${targetVentaId} registrada con éxito.`, 'success');
+            renderCurrentRoute();
+        }
+
+        function viewInvoiceModal(id_venta) {
+            const db = loadDB();
+            const factura = sp_ObtenerFacturaCalculada(db, id_venta);
+            if (!factura) return;
+
+            const container = document.getElementById('invoice-printable');
+            container.innerHTML = `
+                <div class="border-b border-slate-200 pb-4 mb-4 flex items-center justify-between">
+                    <div>${getLogoSVG('color')}</div>
+                    <div class="text-right">
+                        <span class="text-xs font-bold uppercase tracking-wider text-blue-600 bg-blue-50 px-3 py-1 rounded-full">Factura #${factura.id_ventas}</span>
+                        <p class="text-xs text-slate-500 mt-1.5">${formatDate(factura.fecha_venta)}</p>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3 text-xs bg-sky-50/70 p-3.5 rounded-2xl mb-4">
+                    <div>
+                        <span class="text-slate-500 block">Cliente:</span>
+                        <strong class="text-slate-800 text-sm">${factura.cliente}</strong>
+                    </div>
+                    <div class="text-right">
+                        <span class="text-slate-500 block">Atendido por:</span>
+                        <strong class="text-slate-800 text-sm">${factura.atendido_por}</strong>
+                    </div>
+                </div>
+
+                <div class="space-y-3 text-xs">
+                    <div>
+                        <h4 class="font-bold text-slate-700 uppercase tracking-wider mb-1.5">Servicios de Lavado</h4>
+                        <div class="divide-y divide-slate-100 border border-slate-100 rounded-xl overflow-hidden">
+                            ${factura.servicios.map(s => `
+                                <div class="p-2.5 flex justify-between items-center bg-white">
+                                    <div>
+                                        <p class="font-semibold text-slate-800">${s.nombre_servicio}</p>
+                                        <p class="text-[11px] text-slate-500">Cant: ${s.cantidad} ${s.peso_lb ? `| Peso: ${s.peso_lb} lb` : ''} × ${formatMoney(s.precio_unitario_historico)}</p>
+                                    </div>
+                                    <span class="font-bold text-slate-800">${formatMoney(s.subtotal_servicio)}</span>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+
+                    ${factura.productos.length > 0 ? `
+                        <div>
+                            <h4 class="font-bold text-slate-700 uppercase tracking-wider mb-1.5">Insumos / Productos Adicionales</h4>
+                            <div class="divide-y divide-slate-100 border border-slate-100 rounded-xl overflow-hidden">
+                                ${factura.productos.map(p => `
+                                    <div class="p-2.5 flex justify-between items-center bg-white">
+                                        <div>
+                                            <p class="font-semibold text-slate-800">${p.nombre_producto}</p>
+                                            <p class="text-[11px] text-slate-500">${p.cantidad_ml} ml × ${formatMoney(p.precio_unitario_historico)}/ml</p>
+                                        </div>
+                                        <span class="font-bold text-slate-800">${formatMoney(p.subtotal_producto)}</span>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                    ` : ''}
+                </div>
+
+                <div class="mt-5 pt-4 border-t border-slate-200 space-y-1 text-sm">
+                    <div class="flex justify-between text-slate-500 text-xs">
+                        <span>Total Servicios:</span>
+                        <span>${formatMoney(factura.total_servicios)}</span>
+                    </div>
+                    <div class="flex justify-between text-slate-500 text-xs">
+                        <span>Total Productos:</span>
+                        <span>${formatMoney(factura.total_productos)}</span>
+                    </div>
+                    <div class="flex justify-between text-lg font-extrabold text-[#0A58CA] pt-2">
+                        <span>TOTAL A PAGAR:</span>
+                        <span>${formatMoney(factura.total_factura)}</span>
+                    </div>
+                </div>
+            `;
+
+            openModal('modal-invoice');
+        }
+
+        function openServicesCatalogModal() {
+            const db = loadDB();
+            const list = document.getElementById('services-modal-list');
+            list.innerHTML = db.servicios_lavados.map(srv => `
+                <div class="flex items-center justify-between p-3.5 rounded-2xl border border-slate-100 bg-slate-50/70">
+                    <div>
+                        <p class="text-sm font-bold text-slate-800">${srv.nombre_servicio}</p>
+                        <p class="text-xs text-slate-500">Tarifa base: <strong class="text-blue-600">${formatMoney(srv.precio_lavado)}</strong></p>
+                    </div>
+                    <span class="px-3 py-1 rounded-full text-[11px] font-semibold ${srv.estado ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-200 text-slate-600'}">
+                        ${srv.estado ? 'Activo' : 'Inactivo'}
+                    </span>
+                </div>
+            `).join('');
+            openModal('modal-services');
+        }
+
+        async function addNewService(e) {
+            e.preventDefault();
+            const name = document.getElementById('new-srv-name').value.trim();
+            const price = Number(document.getElementById('new-srv-price').value);
+            if (!name) return;
+
+            const db = loadDB();
+            if (supabaseClient) {
+                const { error } = await supabaseClient.from('servicios_lavados').insert([{
+                    nombre_servicio: name,
+                    precio_lavado: price,
+                    estado: true
+                }]);
+                if (error) {
+                    showToast('Error al agregar servicio: ' + error.message, 'error');
+                    return;
+                }
+                await syncFromSupabase(true);
+            } else {
+                const nextId = db.servicios_lavados.length > 0 ? Math.max(...db.servicios_lavados.map(s => s.id_servicio)) + 1 : 1;
+                db.servicios_lavados.push({
+                    id_servicio: nextId,
+                    nombre_servicio: name,
+                    precio_lavado: price,
+                    estado: true
+                });
+                saveDB(db);
+            }
+
+            document.getElementById('new-srv-name').value = '';
+            document.getElementById('new-srv-price').value = '';
+            showToast('Servicio agregado al catálogo.', 'success');
+            openServicesCatalogModal();
+            renderCurrentRoute();
+        }
+
+        // =========================================================================
+        // 11. VISTA 5: CATEGORÍAS
+        // =========================================================================
+        function renderCategoriasView(container) {
+            const db = loadDB();
+            const q = state.searchQuery;
+            const activeProducts = db.productos.filter(p => p.estado);
+
+            const categories = db.categorias.filter(c =>
+                !q || c.nombre_categoria.toLowerCase().includes(q)
+            );
+
+            container.innerHTML = `
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+                    <!-- Lista de Categorías -->
+                    <div class="lg:col-span-7 space-y-4">
+                        <div>
+                            <h1 class="text-xl font-bold text-[#0F2942]">Categorías de Productos</h1>
+                            <p class="text-xs text-slate-600">Clasificación de detergentes, suavizantes y químicos de lavandería.</p>
+                        </div>
+
+                        <div class="space-y-3">
+                            ${categories.map(cat => {
+                                const count = activeProducts.filter(p => p.id_categoria === cat.id_categoria).length;
+                                return `
+                                <div class="bg-white rounded-card p-5 shadow-soft flex flex-wrap items-center justify-between gap-4">
+                                    <div class="flex items-center gap-4">
+                                        <div class="w-12 h-12 rounded-2xl bg-blue-50 text-[#0A58CA] flex items-center justify-center shrink-0">
+                                            <i data-lucide="layers" class="w-6 h-6"></i>
+                                        </div>
+                                        <div>
+                                            <h3 class="text-base font-bold text-slate-800">${cat.nombre_categoria}</h3>
+                                            <p class="text-xs text-slate-500">Productos asociados: <strong class="text-blue-600">${count}</strong></p>
+                                        </div>
+                                    </div>
+                                    <div class="flex items-center gap-2">
+                                        <button onclick="promptEditCategory(${cat.id_categoria})" class="px-4 py-2 rounded-full bg-sky-100 hover:bg-sky-200 text-[#0A58CA] text-xs font-semibold cursor-pointer">
+                                            Editar
+                                        </button>
+                                        <button onclick="deleteCategory(${cat.id_categoria})" class="px-4 py-2 rounded-full bg-rose-50 hover:bg-rose-100 text-rose-600 text-xs font-semibold cursor-pointer">
+                                            Eliminar
+                                        </button>
+                                    </div>
+                                </div>`;
+                            }).join('')}
+                        </div>
+                    </div>
+
+                    <!-- Formulario Nueva Categoría -->
+                    <div class="lg:col-span-5 bg-white rounded-card p-6 shadow-soft sticky top-24">
+                        <h2 class="text-lg font-bold text-[#0F2942] mb-1">Nueva Categoría</h2>
+                        <p class="text-xs text-slate-500 mb-4">Agrega una nueva clasificación para organizar tus insumos.</p>
+                        <form onsubmit="createCategory(event)" class="space-y-4">
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-700 mb-1">Nombre de la categoría *</label>
+                                <input type="text" id="new-cat-name" required placeholder="Ej. Quitamanchas Enzimáticos"
+                                    class="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-sm focus:outline-none focus:border-blue-600">
+                            </div>
+                            <button type="submit" class="w-full py-3 px-6 rounded-full btn-cobalt text-white text-sm font-semibold shadow-pill cursor-pointer">
+                                Guardar Categoría
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            `;
+        }
+
+        async function createCategory(e) {
+            e.preventDefault();
+            const input = document.getElementById('new-cat-name');
+            const name = input.value.trim();
+            if (!name) return;
+
+            const db = loadDB();
+            if (db.categorias.some(c => c.nombre_categoria.toLowerCase() === name.toLowerCase())) {
+                showToast('Ya existe una categoría con ese nombre.', 'error');
+                return;
+            }
+
+            if (supabaseClient) {
+                const { error } = await supabaseClient.from('categorias').insert([{ nombre_categoria: name }]);
+                if (error) {
+                    showToast('Error al crear categoría en Supabase: ' + error.message, 'error');
+                    return;
+                }
+                await syncFromSupabase(true);
+            } else {
+                const nextId = db.categorias.length > 0 ? Math.max(...db.categorias.map(c => c.id_categoria)) + 1 : 1;
+                db.categorias.push({ id_categoria: nextId, nombre_categoria: name });
+                saveDB(db);
+            }
+
+            input.value = '';
+            showToast('Categoría creada correctamente.', 'success');
+            renderCurrentRoute();
+        }
+
+        function promptEditCategory(id_categoria) {
+            const db = loadDB();
+            const cat = db.categorias.find(c => c.id_categoria === id_categoria);
+            if (!cat) return;
+
+            // Modal inline rápido dentro de confirm-modal
+            const msgEl = document.getElementById('confirm-message');
+            document.getElementById('confirm-title').textContent = 'Editar Categoría';
+            msgEl.innerHTML = `
+                <input type="text" id="inline-edit-cat-input" value="${cat.nombre_categoria}"
+                    class="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-sm text-slate-800 mt-2 focus:outline-none focus:border-blue-600">
+            `;
+            const btn = document.getElementById('confirm-accept-btn');
+            btn.onclick = async () => {
+                const newVal = document.getElementById('inline-edit-cat-input').value.trim();
+                if (!newVal) return;
+
+                if (supabaseClient) {
+                    const { error } = await supabaseClient
+                        .from('categorias')
+                        .update({ nombre_categoria: newVal })
+                        .eq('id_categoria', id_categoria);
+                    if (error) {
+                        showToast('Error al actualizar categoría: ' + error.message, 'error');
+                        return;
+                    }
+                    await syncFromSupabase(true);
+                    showToast('Categoría actualizada.', 'success');
+                } else {
+                    const freshDb = loadDB();
+                    const target = freshDb.categorias.find(c => c.id_categoria === id_categoria);
+                    if (target) {
+                        target.nombre_categoria = newVal;
+                        saveDB(freshDb);
+                        showToast('Categoría actualizada.', 'success');
+                    }
+                }
+                closeModal('modal-confirm');
+                renderCurrentRoute();
+            };
+            openModal('modal-confirm');
+        }
+
+        function deleteCategory(id_categoria) {
+            const db = loadDB();
+            // Integridad referencial: fk_productos_categorias ON DELETE RESTRICT
+            const hasProducts = db.productos.some(p => p.id_categoria === id_categoria && p.estado === true);
+            if (hasProducts) {
+                showToast('No se puede eliminar: tiene productos activos asociados.', 'error');
+                return;
+            }
+
+            openConfirmModal(
+                'Eliminar Categoría',
+                '¿Estás seguro de eliminar esta categoría?',
+                async () => {
+                    if (supabaseClient) {
+                        const { error } = await supabaseClient
+                            .from('categorias')
+                            .delete()
+                            .eq('id_categoria', id_categoria);
+                        if (error) {
+                            showToast('No se pudo eliminar (puede tener registros históricos asociados).', 'error');
+                            return;
+                        }
+                        await syncFromSupabase(true);
+                    } else {
+                        const freshDb = loadDB();
+                        freshDb.categorias = freshDb.categorias.filter(c => c.id_categoria !== id_categoria);
+                        saveDB(freshDb);
+                    }
+                    showToast('Categoría eliminada.', 'info');
+                    renderCurrentRoute();
+                }
+            );
+        }
+
+        // =========================================================================
+        // 12. VISTA 6: EMPLEADOS (CAPTURA 7 - SOLO ADMINISTRADOR)
+        // =========================================================================
+        function renderEmpleadosView(container) {
+            if (!isAdmin()) {
+                navigateTo('menu');
+                return;
+            }
+
+            const db = loadDB();
+            const q = state.searchQuery;
+            const currentUser = getCurrentUser();
+
+            const activeUsers = db.usuarios.filter(u => {
+                if (!u.estado) return false;
+                if (!q) return true;
+                return u.nombre.toLowerCase().includes(q) || u.correo.toLowerCase().includes(q);
+            });
+
+            container.innerHTML = `
+                <div class="grid grid-cols-1 xl:grid-cols-12 gap-6 items-start">
+                    <!-- COLUMNA IZQUIERDA: TARJETAS DE EMPLEADOS -->
+                    <div class="xl:col-span-7 space-y-5">
+                        <div>
+                            <h1 class="text-xl font-bold text-[#0F2942]">Personal Registrado</h1>
+                            <p class="text-xs text-slate-600">Administración de accesos y roles del equipo Aqua Clean.</p>
+                        </div>
+
+                        <div class="space-y-4">
+                            ${activeUsers.map(emp => {
+                                const role = db.roles.find(r => r.id_rol === emp.id_rol);
+                                const isPassVisible = !!state.visiblePasswords[emp.id_usuario];
+                                const maskedPass = isPassVisible ? emp.clave : '••••••••';
+                                return `
+                                <div class="bg-white rounded-card p-6 shadow-soft flex flex-col items-center text-center">
+                                    <img src="${emp.foto_perfil || createAvatarDataURI('U', '#0A58CA', '#38BDF8')}" alt="${emp.nombre}"
+                                        class="w-24 h-24 rounded-full object-cover border-4 border-sky-100 shadow-xs mb-3">
+                                    <h3 class="text-lg font-bold text-slate-800">${emp.nombre}</h3>
+
+                                    <div class="w-full grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs text-left bg-slate-50/70 p-3.5 rounded-2xl mt-3 mb-4">
+                                        <div class="truncate">
+                                            <span class="text-slate-400 block">Correo:</span>
+                                            <strong class="text-slate-700">${emp.correo}</strong>
+                                        </div>
+                                        <div>
+                                            <span class="text-slate-400 block">Contraseña:</span>
+                                            <div class="flex items-center gap-1.5">
+                                                <strong class="text-slate-700 font-mono">${maskedPass}</strong>
+                                                <button type="button" onclick="toggleEmployeePassword(${emp.id_usuario})" class="text-slate-400 hover:text-blue-600 cursor-pointer">
+                                                    <i data-lucide="${isPassVisible ? 'eye-off' : 'eye'}" class="w-3.5 h-3.5"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <span class="text-slate-400 block">Rol:</span>
+                                            <strong class="text-[#0A58CA]">${role ? role.nombre_rol : 'Empleado'}</strong>
+                                        </div>
+                                    </div>
+
+                                    <div class="flex gap-3 w-full max-w-xs">
+                                        <button onclick="openEditEmployeeModal(${emp.id_usuario})" class="flex-1 py-2 px-4 rounded-full btn-cobalt text-white text-xs font-semibold cursor-pointer">
+                                            Editar
+                                        </button>
+                                        ${emp.id_usuario !== currentUser.id_usuario ? `
+                                            <button onclick="softDeleteEmployee(${emp.id_usuario})" class="flex-1 py-2 px-4 rounded-full btn-cobalt text-white text-xs font-semibold cursor-pointer">
+                                                Eliminar
+                                            </button>
+                                        ` : `
+                                            <span class="flex-1 py-2 px-4 rounded-full bg-sky-100 text-blue-700 text-xs font-semibold">Sesión actual</span>
+                                        `}
+                                    </div>
+                                </div>`;
+                            }).join('')}
+                        </div>
+                    </div>
+
+                    <!-- COLUMNA DERECHA: AGREGAR EMPLEADO -->
+                    <div class="xl:col-span-5 bg-white rounded-card p-6 shadow-soft sticky top-24">
+                        <h2 class="text-2xl font-bold text-[#0F2942] text-center mb-4">Agregar Empleado</h2>
+
+                        <form onsubmit="createEmployee(event)" class="space-y-4">
+                            <div class="flex flex-col items-center">
+                                <img id="new-emp-preview" src="${state.newEmpAvatar}" alt="Avatar"
+                                    class="w-24 h-24 rounded-full object-cover border-4 border-sky-100 mb-3">
+                                <label class="px-6 py-2 rounded-full btn-cobalt text-white text-xs font-semibold shadow-pill cursor-pointer">
+                                    Subir imagen
+                                    <input type="file" accept="image/*" class="hidden" onchange="handleImageUpload(event, 'new-emp-preview', null, (url) => state.newEmpAvatar = url)">
+                                </label>
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">Nombre *</label>
+                                <input type="text" id="new-emp-nombre" required placeholder="Nombre completo"
+                                    class="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-sm focus:outline-none focus:border-blue-600">
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">Correo *</label>
+                                <input type="email" id="new-emp-correo" required placeholder="correo@aquaclean.com"
+                                    class="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-sm focus:outline-none focus:border-blue-600">
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">Teléfono</label>
+                                <input type="text" id="new-emp-telefono" placeholder="7788-9900"
+                                    class="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-sm focus:outline-none focus:border-blue-600">
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">Contraseña *</label>
+                                <input type="password" id="new-emp-clave" required placeholder="••••••••"
+                                    class="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-sm focus:outline-none focus:border-blue-600">
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">Rol *</label>
+                                <select id="new-emp-rol" required class="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-sm bg-white focus:outline-none focus:border-blue-600">
+                                    ${db.roles.map(r => `<option value="${r.id_rol}" ${r.id_rol === 2 ? 'selected' : ''}>${r.nombre_rol}</option>`).join('')}
+                                </select>
+                            </div>
+
+                            <div class="pt-2">
+                                <button type="submit" class="w-full py-3 px-6 rounded-full btn-cobalt text-white text-sm font-semibold shadow-pill cursor-pointer">
+                                    Registrar
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            `;
+        }
+
+        function toggleEmployeePassword(id_usuario) {
+            state.visiblePasswords[id_usuario] = !state.visiblePasswords[id_usuario];
+            renderCurrentRoute();
+        }
+
+        async function createEmployee(e) {
+            e.preventDefault();
+            const nombre = document.getElementById('new-emp-nombre').value.trim();
+            const correo = document.getElementById('new-emp-correo').value.trim();
+            const telefono = document.getElementById('new-emp-telefono').value.trim();
+            const clave = document.getElementById('new-emp-clave').value;
+            const id_rol = Number(document.getElementById('new-emp-rol').value);
+
+            const db = loadDB();
+            if (db.usuarios.some(u => u.correo.toLowerCase() === correo.toLowerCase())) {
+                showToast('El correo electrónico ya está registrado.', 'error');
+                return;
+            }
+
+            const initials = nombre.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
+            const payload = {
+                nombre,
+                correo,
+                telefono: telefono || null,
+                estado: true,
+                foto_perfil: state.newEmpAvatar || createAvatarDataURI(initials, '#0A58CA', '#38BDF8'),
+                id_rol,
+                clave
+            };
+
+            if (supabaseClient) {
+                const { error } = await supabaseClient.from('usuarios').insert([payload]);
+                if (error) {
+                    showToast('Error al registrar empleado en Supabase: ' + error.message, 'error');
+                    return;
+                }
+                await syncFromSupabase(true);
+            } else {
+                const nextId = db.usuarios.length > 0 ? Math.max(...db.usuarios.map(u => u.id_usuario)) + 1 : 1;
+                db.usuarios.push({ id_usuario: nextId, ...payload });
+                saveDB(db);
+            }
+
+            state.newEmpAvatar = createAvatarDataURI('EMP', '#0A58CA', '#60A5FA');
+            showToast(`Empleado "${nombre}" registrado exitosamente.`, 'success');
+            renderCurrentRoute();
+        }
+
+        function openEditEmployeeModal(id_usuario) {
+            const db = loadDB();
+            const emp = db.usuarios.find(u => u.id_usuario === id_usuario);
+            if (!emp) return;
+
+            document.getElementById('confirm-title').textContent = `Editar: ${emp.nombre}`;
+            document.getElementById('confirm-message').innerHTML = `
+                <div class="space-y-3 text-left mt-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">Nombre</label>
+                        <input type="text" id="modal-emp-nombre" value="${emp.nombre}" class="w-full px-3 py-2 rounded-xl border border-slate-300 text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">Correo</label>
+                        <input type="email" id="modal-emp-correo" value="${emp.correo}" class="w-full px-3 py-2 rounded-xl border border-slate-300 text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">Contraseña</label>
+                        <input type="text" id="modal-emp-clave" value="${emp.clave}" class="w-full px-3 py-2 rounded-xl border border-slate-300 text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">Rol</label>
+                        <select id="modal-emp-rol" class="w-full px-3 py-2 rounded-xl border border-slate-300 text-sm bg-white">
+                            ${db.roles.map(r => `<option value="${r.id_rol}" ${r.id_rol === emp.id_rol ? 'selected' : ''}>${r.nombre_rol}</option>`).join('')}
+                        </select>
+                    </div>
+                </div>
+            `;
+
+            const btn = document.getElementById('confirm-accept-btn');
+            btn.onclick = async () => {
+                const updatedData = {
+                    nombre: document.getElementById('modal-emp-nombre').value.trim() || emp.nombre,
+                    correo: document.getElementById('modal-emp-correo').value.trim() || emp.correo,
+                    clave: document.getElementById('modal-emp-clave').value || emp.clave,
+                    id_rol: Number(document.getElementById('modal-emp-rol').value)
+                };
+
+                if (supabaseClient) {
+                    const { error } = await supabaseClient
+                        .from('usuarios')
+                        .update(updatedData)
+                        .eq('id_usuario', id_usuario);
+                    if (error) {
+                        showToast('Error al actualizar empleado: ' + error.message, 'error');
+                        return;
+                    }
+                    await syncFromSupabase(true);
+                } else {
+                    const freshDb = loadDB();
+                    const target = freshDb.usuarios.find(u => u.id_usuario === id_usuario);
+                    if (target) {
+                        Object.assign(target, updatedData);
+                        saveDB(freshDb);
+                    }
+                }
+                showToast('Datos del empleado actualizados.', 'success');
+                closeModal('modal-confirm');
+                renderCurrentRoute();
+            };
+            openModal('modal-confirm');
+        }
+
+        function softDeleteEmployee(id_usuario) {
+            const db = loadDB();
+            const emp = db.usuarios.find(u => u.id_usuario === id_usuario);
+            if (!emp) return;
+
+            openConfirmModal(
+                'Desactivar Empleado',
+                `¿Deseas desactivar la cuenta de "${emp.nombre}"? Se registrará en la bitácora de auditoría.`,
+                async () => {
+                    const freshDb = loadDB();
+                    const target = freshDb.usuarios.find(u => u.id_usuario === id_usuario);
+                    if (target && target.estado === true) {
+                        if (supabaseClient) {
+                            const { error } = await supabaseClient
+                                .from('usuarios')
+                                .update({ estado: false })
+                                .eq('id_usuario', id_usuario);
+                            if (error) {
+                                showToast('Error al desactivar usuario: ' + error.message, 'error');
+                                return;
+                            }
+                        }
+
+                        target.estado = false; // Trigger trg_Auditoria_SoftDelete_Usuarios
+                        await registrarBitacora(
+                            freshDb,
+                            'usuarios',
+                            'SOFT_DELETE',
+                            `Se desactivó el usuario ID: ${target.id_usuario} - Nombre: ${target.nombre} - Correo: ${target.correo}`
+                        );
+
+                        if (supabaseClient) {
+                            await syncFromSupabase(true);
+                        } else {
+                            saveDB(freshDb);
+                        }
+                        showToast('Empleado desactivado y auditado.', 'info');
+                        renderCurrentRoute();
+                    }
+                }
+            );
+        }
+
+        // =========================================================================
+        // 13. VISTA 7: PERFIL / AJUSTES (CAPTURA 6)
+        // =========================================================================
+        function renderAjustesView(container) {
+            const user = getCurrentUser();
+            const db = loadDB();
+            const roleObj = db.roles.find(r => r.id_rol === user.id_rol);
+            const roleName = roleObj ? roleObj.nombre_rol.toLowerCase() : 'usuario';
+            const admin = isAdmin();
+
+            const roleDescription = admin
+                ? 'El administrador es el usuario responsable de gestionar y supervisar el funcionamiento completo del sistema web de Aqua Clean Lavandería. Tiene acceso exclusivo a las funciones internas de la plataforma, permitiéndole agregar, editar o eliminar productos, gestionar y editar ventas, administrar empleados y mantener actualizada la información del negocio.'
+                : 'El empleado es el usuario operativo encargado de atender a los clientes en mostrador, registrar nuevas ventas de servicios de lavado e insumos adicionales por mililitro, consultar el inventario disponible y gestionar productos y categorías.';
+
+            container.innerHTML = `
+                <div class="max-w-2xl mx-auto">
+                    <div class="bg-white rounded-card p-6 sm:p-8 shadow-soft border-2 border-blue-500">
+                        <!-- Cabecera Avatar + Actualizar Foto -->
+                        <div class="flex items-center justify-between gap-4 mb-6">
+                            <img id="profile-avatar-img" src="${user.foto_perfil}" alt="${user.nombre}"
+                                class="w-24 h-24 sm:w-28 sm:h-28 rounded-full object-cover border-4 border-sky-100 shadow-xs">
+                            <label class="px-5 py-2 rounded-full bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-semibold transition cursor-pointer">
+                                Actualizar foto
+                                <input type="file" accept="image/*" class="hidden" onchange="updateProfilePhoto(event)">
+                            </label>
+                        </div>
+
+                        <!-- Datos Editables Inline -->
+                        <div class="border border-slate-200 rounded-2xl divide-y divide-slate-100 px-5 py-2">
+                            <!-- Nombre -->
+                            <div class="py-3.5 flex items-center justify-between gap-4">
+                                <div class="flex-1">
+                                    <span class="block text-xs text-slate-400">Tu nombre</span>
+                                    ${state.editingProfileField === 'nombre' ? `
+                                        <input type="text" id="profile-edit-input" value="${user.nombre}" class="mt-1 w-full px-3 py-1.5 rounded-lg border border-blue-400 text-sm font-semibold">
+                                    ` : `
+                                        <span class="text-sm font-bold text-slate-800">${user.nombre}</span>
+                                    `}
+                                </div>
+                                ${state.editingProfileField === 'nombre' ? `
+                                    <button onclick="saveProfileField('nombre')" class="px-4 py-1.5 rounded-full btn-cobalt text-white text-xs font-semibold cursor-pointer">Guardar</button>
+                                ` : `
+                                    <button onclick="editProfileField('nombre')" class="px-4 py-1.5 rounded-full bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-semibold cursor-pointer">Editar</button>
+                                `}
+                            </div>
+
+                            <!-- Correo -->
+                            <div class="py-3.5 flex items-center justify-between gap-4">
+                                <div class="flex-1">
+                                    <span class="block text-xs text-slate-400">Tu correo</span>
+                                    ${state.editingProfileField === 'correo' ? `
+                                        <input type="email" id="profile-edit-input" value="${user.correo}" class="mt-1 w-full px-3 py-1.5 rounded-lg border border-blue-400 text-sm font-semibold">
+                                    ` : `
+                                        <span class="text-sm font-bold text-slate-800">${user.correo}</span>
+                                    `}
+                                </div>
+                                ${state.editingProfileField === 'correo' ? `
+                                    <button onclick="saveProfileField('correo')" class="px-4 py-1.5 rounded-full btn-cobalt text-white text-xs font-semibold cursor-pointer">Guardar</button>
+                                ` : `
+                                    <button onclick="editProfileField('correo')" class="px-4 py-1.5 rounded-full bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-semibold cursor-pointer">Editar</button>
+                                `}
+                            </div>
+
+                            <!-- Teléfono -->
+                            <div class="py-3.5 flex items-center justify-between gap-4">
+                                <div class="flex-1">
+                                    <span class="block text-xs text-slate-400">Tu teléfono</span>
+                                    ${state.editingProfileField === 'telefono' ? `
+                                        <input type="text" id="profile-edit-input" value="${user.telefono || ''}" class="mt-1 w-full px-3 py-1.5 rounded-lg border border-blue-400 text-sm font-semibold">
+                                    ` : `
+                                        <span class="text-sm font-bold text-slate-800">${user.telefono || 'No registrado'}</span>
+                                    `}
+                                </div>
+                                ${state.editingProfileField === 'telefono' ? `
+                                    <button onclick="saveProfileField('telefono')" class="px-4 py-1.5 rounded-full btn-cobalt text-white text-xs font-semibold cursor-pointer">Guardar</button>
+                                ` : `
+                                    <button onclick="editProfileField('telefono')" class="px-4 py-1.5 rounded-full bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-semibold cursor-pointer">Editar</button>
+                                `}
+                            </div>
+
+                            <!-- Contraseña -->
+                            <div class="py-3.5 flex items-center justify-between gap-4">
+                                <div class="flex-1">
+                                    <span class="block text-xs text-slate-400">Tu contraseña</span>
+                                    ${state.editingProfileField === 'clave' ? `
+                                        <input type="text" id="profile-edit-input" value="${user.clave}" class="mt-1 w-full px-3 py-1.5 rounded-lg border border-blue-400 text-sm font-semibold">
+                                    ` : `
+                                        <span class="text-sm font-bold text-slate-800">••••••••••</span>
+                                    `}
+                                </div>
+                                ${state.editingProfileField === 'clave' ? `
+                                    <button onclick="saveProfileField('clave')" class="px-4 py-1.5 rounded-full btn-cobalt text-white text-xs font-semibold cursor-pointer">Guardar</button>
+                                ` : `
+                                    <button onclick="editProfileField('clave')" class="px-4 py-1.5 rounded-full bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-semibold cursor-pointer">Actualizar</button>
+                                `}
+                            </div>
+                        </div>
+
+                        <!-- Cerrar Sesión y Bitácora Admin -->
+                        <div class="mt-4 flex flex-wrap items-center justify-between gap-3">
+                            ${admin ? `
+                                <button onclick="openAuditLogModal()" class="text-xs font-semibold text-blue-600 hover:underline flex items-center gap-1.5 cursor-pointer">
+                                    <i data-lucide="shield-check" class="w-4 h-4"></i> Ver Bitácora de Auditoría
+                                </button>
+                            ` : '<span></span>'}
+                            <button onclick="logout()" class="text-xs font-bold text-rose-600 hover:text-rose-700 cursor-pointer">
+                                Cerrar Sesión
+                            </button>
+                        </div>
+
+                        <!-- Acerca del rol -->
+                        <div class="mt-5 p-4 rounded-2xl border border-slate-200 bg-slate-50/50">
+                            <h3 class="text-xs font-bold text-slate-800 mb-1.5">
+                                Acerca del <span class="text-indigo-700">${roleName}</span>
+                            </h3>
+                            <p class="text-[11px] leading-relaxed text-slate-500">
+                                ${roleDescription}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function editProfileField(field) {
+            state.editingProfileField = field;
+            renderCurrentRoute();
+        }
+
+        async function saveProfileField(field) {
+            const val = document.getElementById('profile-edit-input').value.trim();
+            if (!val && field !== 'telefono') {
+                showToast('El campo no puede estar vacío.', 'error');
+                return;
+            }
+            const user = getCurrentUser();
+            const db = loadDB();
+
+            if (supabaseClient) {
+                const { error } = await supabaseClient
+                    .from('usuarios')
+                    .update({ [field]: val || null })
+                    .eq('id_usuario', user.id_usuario);
+                if (error) {
+                    showToast('Error al actualizar perfil: ' + error.message, 'error');
+                    return;
+                }
+                await syncFromSupabase(true);
+                const updatedUser = getCurrentUser();
+                if (updatedUser) {
+                    document.getElementById('header-user-name').textContent = updatedUser.nombre;
+                }
+            } else {
+                const target = db.usuarios.find(u => u.id_usuario === user.id_usuario);
+                if (target) {
+                    target[field] = val;
+                    saveDB(db);
+                    document.getElementById('header-user-name').textContent = target.nombre;
+                }
+            }
+
+            showToast('Perfil actualizado correctamente.', 'success');
+            state.editingProfileField = null;
+            renderCurrentRoute();
+        }
+
+        function updateProfilePhoto(event) {
+            handleImageUpload(event, 'profile-avatar-img', null, async (dataUrl) => {
+                const user = getCurrentUser();
+                const db = loadDB();
+
+                if (supabaseClient) {
+                    const { error } = await supabaseClient
+                        .from('usuarios')
+                        .update({ foto_perfil: dataUrl })
+                        .eq('id_usuario', user.id_usuario);
+                    if (error) {
+                        showToast('Error al actualizar foto: ' + error.message, 'error');
+                        return;
+                    }
+                    await syncFromSupabase(true);
+                } else {
+                    const target = db.usuarios.find(u => u.id_usuario === user.id_usuario);
+                    if (target) {
+                        target.foto_perfil = dataUrl;
+                        saveDB(db);
+                    }
+                }
+
+                document.getElementById('header-user-avatar').src = dataUrl;
+                showToast('Foto de perfil actualizada.', 'success');
+            });
+        }
+
+        function openAuditLogModal() {
+            const db = loadDB();
+            const list = document.getElementById('audit-log-list');
+            list.innerHTML = db.bitacora_auditoria.map(log => {
+                const badgeColors = {
+                    'SOFT_DELETE': 'bg-rose-100 text-rose-700',
+                    'UPDATE_PRECIO': 'bg-amber-100 text-amber-800',
+                    'INSERT_VENTA': 'bg-emerald-100 text-emerald-700',
+                    'UPDATE_VENTA': 'bg-blue-100 text-blue-700',
+                    'INIT_DB': 'bg-slate-100 text-slate-700'
+                };
+                return `
+                <div class="p-3.5 rounded-2xl border border-slate-100 bg-slate-50/70 text-xs">
+                    <div class="flex flex-wrap items-center justify-between gap-2 mb-1">
+                        <div class="flex items-center gap-2">
+                            <span class="px-2.5 py-0.5 rounded-full font-bold text-[10px] ${badgeColors[log.operacion] || 'bg-blue-100 text-blue-700'}">
+                                ${log.operacion}
+                            </span>
+                            <span class="font-semibold text-slate-600">Tabla: ${log.tabla_afectada}</span>
+                        </div>
+                        <span class="text-slate-400">${new Date(log.fecha_movimiento).toLocaleString('es-ES')}</span>
+                    </div>
+                    <p class="text-slate-800 font-medium">${log.detalle_cambio}</p>
+                    <p class="text-[11px] text-slate-400 mt-1">Ejecutado por: ${log.usuario_accion}</p>
+                </div>`;
+            }).join('');
+
+            openModal('modal-audit');
+        }
+
+        // =========================================================================
+        // 14. INICIALIZACIÓN AL CARGAR LA PÁGINA
+        // =========================================================================
+        window.addEventListener('DOMContentLoaded', async () => {
+            // Mostrar banner si Supabase aún tiene las llaves de ejemplo
+            const banner = document.getElementById('supabase-mode-banner');
+            if (!isSupabaseConfigured && banner) {
+                banner.classList.remove('hidden');
+            }
+
+            // Renderizar logos SVG inline
+            document.getElementById('login-logo-container').innerHTML = getLogoSVG('white');
+            document.getElementById('mockup-logo-container').innerHTML = getLogoSVG('color');
+            document.getElementById('sidebar-logo-container').innerHTML = getLogoSVG('color');
+
+            // Inicializar BD local o sincronizar desde Supabase
+            if (supabaseClient) {
+                await syncFromSupabase(true);
+                setupSupabaseRealtime();
+            } else {
+                loadDB();
+            }
+
+            // Verificar sesión activa
+            if (getCurrentUser()) {
+                await initAppShell();
+            } else {
+                document.getElementById('login-view').classList.remove('hidden');
+                document.getElementById('app-view').classList.add('hidden');
+            }
+
+            lucide.createIcons();
+        });
+    </script>
+</body>
+</html>
